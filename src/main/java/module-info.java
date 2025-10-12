@@ -10,7 +10,24 @@ module com.example.doanltm {
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
+    requires com.almasb.fxgl.all;
+    requires mysql.connector.j;
+
 
     opens com.example.doanltm to javafx.fxml;
+    opens com.example.doanltm.controller to javafx.fxml;
+    opens com.example.doanltm.Model to javafx.fxml;
+    opens com.example.doanltm.Service to javafx.fxml;
+    opens com.example.doanltm.Util to javafx.fxml;
+    opens com.example.doanltm.Database to javafx.fxml;
+
+
+
     exports com.example.doanltm;
+    exports com.example.doanltm.Model;
+    exports com.example.doanltm.Service;
+    exports com.example.doanltm.Util;
+    exports com.example.doanltm.Controller;
+    exports com.example.doanltm.Database;
+
 }
