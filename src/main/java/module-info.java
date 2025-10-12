@@ -14,3 +14,4 @@ module com.example.doanltm {
     opens com.example.doanltm to javafx.fxml;
     exports com.example.doanltm;
 }
+//day la main thu 2
