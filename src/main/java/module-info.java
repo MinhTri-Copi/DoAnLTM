@@ -16,7 +16,7 @@ module com.example.doanltm {
 
     opens com.example.doanltm to javafx.fxml;
     opens com.example.doanltm.Controller to javafx.fxml;
-    opens com.example.doanltm.Model to javafx.fxml;
+    opens com.example.doanltm.Model to javafx.fxml, javafx.base;  // Thêm javafx.base
     opens com.example.doanltm.Service to javafx.fxml;
    // opens com.example.doanltm.Util to javafx.fxml;
     opens com.example.doanltm.Database to javafx.fxml;

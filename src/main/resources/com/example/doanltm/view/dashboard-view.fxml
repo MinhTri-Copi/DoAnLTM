@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.doanltm.Controller.UserDashboardController"
+            prefHeight="750.0" prefWidth="1100.0"
+            style="-fx-background-color: #f5f5f5;">
+    
+    <!-- Top Bar -->
+    <top>
+        <HBox style="-fx-background-color: #2c3e50; -fx-padding: 15;" spacing="20" alignment="CENTER_LEFT">
+            <Label text="🏢 Hệ Thống Quản Lý Lịch Làm Việc" style="-fx-text-fill: white; -fx-font-size: 18; -fx-font-weight: bold;"/>
+            
+            <Region HBox.hgrow="ALWAYS"/>
+            
+            <Label fx:id="userNameLabel" text="Nhân viên" style="-fx-text-fill: white; -fx-font-size: 14;"/>
+            <Button text="Đăng xuất" onAction="#handleLogout" 
+                   style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-cursor: hand;"/>
+        </HBox>
+    </top>
+    
+    <!-- Main Content -->
+    <center>
+        <VBox spacing="20" style="-fx-padding: 20;">
+            
+            <!-- Tab pane cho 2 loại đăng ký -->
+            <TabPane tabClosingPolicy="UNAVAILABLE">
+                
+                <!-- Tab 1: Ca bình thường -->
+                <Tab text="📋 Đăng ký Ca Bình Thường">
+                    <VBox spacing="15" style="-fx-padding: 20;">
+                        <Label text="Đăng ký ca làm việc có sẵn" style="-fx-font-size: 14; -fx-text-fill: #7f8c8d;"/>
+                        
+                        <GridPane hgap="15" vgap="15">
+                            <Label text="Ngày làm việc:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <DatePicker fx:id="ngayLamCaBinhThuongPicker" promptText="Chọn ngày" 
+                                       GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="200"/>
+                            
+                            <Label text="Ca làm việc:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                            <ComboBox fx:id="caLamComboBox" promptText="Chọn ca làm" 
+                                     GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="200"/>
+                            
+                            <Label fx:id="caLamInfoLabel" text="" GridPane.columnIndex="2" GridPane.rowIndex="1"
+                                  style="-fx-text-fill: #7f8c8d;"/>
+                            
+                            <Button fx:id="dangKyCaBinhThuongButton" text="Đăng Ký Ca Bình Thường" onAction="#handleDangKyCaBinhThuong"
+                                   GridPane.columnIndex="1" GridPane.rowIndex="2"
+                                   style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
+                                   prefWidth="200" prefHeight="35"/>
+                        </GridPane>
+                        
+                        <Label fx:id="messageCaBinhThuongLabel" textFill="RED" wrapText="true" visible="false"/>
+                    </VBox>
+                </Tab>
+                
+                <!-- Tab 2: Ca gãy -->
+                <Tab text="⚡ Đăng ký Ca Gãy">
+                    <VBox spacing="15" style="-fx-padding: 20;">
+                        <Label text="Đăng ký ca làm việc đột xuất (tự chọn giờ)" style="-fx-font-size: 14; -fx-text-fill: #7f8c8d;"/>
+                        
+                        <GridPane hgap="15" vgap="15">
+                            <Label text="Ngày làm việc:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <DatePicker fx:id="ngayLamCaGayPicker" promptText="Chọn ngày" 
+                                       GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="200"/>
+                            
+                            <Label text="Giờ bắt đầu:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                            <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                <Spinner fx:id="gioBatDauSpinner" prefWidth="70" editable="true"/>
+                                <Label text=":" style="-fx-font-size: 18;"/>
+                                <Spinner fx:id="phutBatDauSpinner" prefWidth="70" editable="true"/>
+                            </HBox>
+                            
+                            <Label text="Giờ kết thúc:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                            <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                                <Spinner fx:id="gioKetThucSpinner" prefWidth="70" editable="true"/>
+                                <Label text=":" style="-fx-font-size: 18;"/>
+                                <Spinner fx:id="phutKetThucSpinner" prefWidth="70" editable="true"/>
+                            </HBox>
+                            
+                            <Button fx:id="dangKyCaGayButton" text="Đăng Ký Ca Gãy" onAction="#handleDangKyCaGay"
+                                   GridPane.columnIndex="1" GridPane.rowIndex="3"
+                                   style="-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
+                                   prefWidth="200" prefHeight="35"/>
+                        </GridPane>
+                        
+                        <Label fx:id="messageCaGayLabel" textFill="RED" wrapText="true" visible="false"/>
+                    </VBox>
+                </Tab>
+            </TabPane>
+            
+            <!-- Danh sách đăng ký của tôi -->
+            <VBox spacing="15" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10;" VBox.vgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="📋 Lịch Làm Việc Của Tôi" style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="🔄 Làm mới" onAction="#handleRefresh" 
+                           style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-cursor: hand;"/>
+                </HBox>
+                
+                <TableView fx:id="dangKyTableView" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colNgayLam" text="Ngày làm" prefWidth="100"/>
+                        <TableColumn fx:id="colLoaiCa" text="Loại ca" prefWidth="120"/>
+                        <TableColumn fx:id="colCaLam" text="Mô tả" prefWidth="150"/>
+                        <TableColumn fx:id="colGioBatDau" text="Giờ bắt đầu" prefWidth="90"/>
+                        <TableColumn fx:id="colGioKetThuc" text="Giờ kết thúc" prefWidth="90"/>
+                        <TableColumn fx:id="colThoiGianDangKy" text="Thời gian đăng ký" prefWidth="150"/>
+                        <TableColumn fx:id="colTrangThai" text="Trạng thái" prefWidth="120"/>
+                        <TableColumn fx:id="colAction" text="Hành động" prefWidth="100"/>
+                    </columns>
+                </TableView>
+            </VBox>
+            
+        </VBox>
+    </center>
+    
+</BorderPane>
