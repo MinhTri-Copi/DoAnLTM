@@ -150,7 +150,7 @@ public class LoginController {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/doanltm/view/dashboard-view.fxml"));
         Scene scene = new Scene(loader.load());
         
-        UserDashboardController controller = loader.getController();
+        EnhancedUserDashboardController controller = loader.getController();
         // TRUYỀN CÙNG TCPClientService ĐỂ GIỮ KẾT NỐI
         controller.setTCPClientService(tcpClientService);
         controller.setCurrentUser(user);

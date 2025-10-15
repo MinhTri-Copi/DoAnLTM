@@ -1,119 +1,171 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
 
-<BorderPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.example.doanltm.Controller.UserDashboardController"
-            prefHeight="750.0" prefWidth="1100.0"
-            style="-fx-background-color: #f5f5f5;">
+<BorderPane prefHeight="800.0" prefWidth="1200.0" styleClass="main-container" stylesheets="@../styles/dashboard.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.doanltm.Controller.EnhancedUserDashboardController">
     
-    <!-- Top Bar -->
+    <!-- Professional Header Bar -->
     <top>
-        <HBox style="-fx-background-color: #2c3e50; -fx-padding: 15;" spacing="20" alignment="CENTER_LEFT">
-            <Label text="🏢 Hệ Thống Quản Lý Lịch Làm Việc" style="-fx-text-fill: white; -fx-font-size: 18; -fx-font-weight: bold;"/>
+        <HBox alignment="CENTER" spacing="20" styleClass="header-bar">
+            <Label style="-fx-text-fill: white; -fx-font-size: 24;" text="🏢" />
             
-            <Region HBox.hgrow="ALWAYS"/>
+            <Region HBox.hgrow="ALWAYS" />
             
-            <Label fx:id="userNameLabel" text="Nhân viên" style="-fx-text-fill: white; -fx-font-size: 14;"/>
-            <Button text="Đăng xuất" onAction="#handleLogout" 
-                   style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-cursor: hand;"/>
+            <Label styleClass="header-title" text="Hệ Thống Quản Lý Lịch Làm Việc" />
+            
+            <Region HBox.hgrow="ALWAYS" />
+            
+            <!-- User Info & Actions -->
+            <HBox alignment="CENTER" spacing="15">
+                <MenuButton styleClass="btn, btn-outline" text="👤 Tài khoản">
+                    <items>
+                        <MenuItem onAction="#handlePersonalStats" text="📊 Thống kê cá nhân" />
+                        <MenuItem onAction="#handleSettings" text="⚙️ Cài đặt" />
+                        <SeparatorMenuItem />
+                        <MenuItem onAction="#handleChangePassword" text="🔑 Đổi mật khẩu" />
+                        <MenuItem onAction="#handleHelp" text="📝 Hướng dẫn" />
+                    </items>
+                </MenuButton>
+                <Label fx:id="userNameLabel" styleClass="header-user-info" text="Nhân viên" />
+                <Button onAction="#handleLogout" styleClass="btn, btn-danger" text="🚪 Đăng xuất" />
+            </HBox>
         </HBox>
     </top>
     
-    <!-- Main Content -->
+    <!-- Main Content Area -->
     <center>
-        <VBox spacing="20" style="-fx-padding: 20;">
+        <VBox styleClass="content-area">
             
-            <!-- Tab pane cho 2 loại đăng ký -->
-            <TabPane tabClosingPolicy="UNAVAILABLE">
+            <!-- Registration Cards -->
+            <HBox alignment="TOP_CENTER" spacing="25">
                 
-                <!-- Tab 1: Ca bình thường -->
-                <Tab text="📋 Đăng ký Ca Bình Thường">
-                    <VBox spacing="15" style="-fx-padding: 20;">
-                        <Label text="Đăng ký ca làm việc có sẵn" style="-fx-font-size: 14; -fx-text-fill: #7f8c8d;"/>
-                        
-                        <GridPane hgap="15" vgap="15">
-                            <Label text="Ngày làm việc:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                            <DatePicker fx:id="ngayLamCaBinhThuongPicker" promptText="Chọn ngày" 
-                                       GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="200"/>
-                            
-                            <Label text="Ca làm việc:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                            <ComboBox fx:id="caLamComboBox" promptText="Chọn ca làm" 
-                                     GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="200"/>
-                            
-                            <Label fx:id="caLamInfoLabel" text="" GridPane.columnIndex="2" GridPane.rowIndex="1"
-                                  style="-fx-text-fill: #7f8c8d;"/>
-                            
-                            <Button fx:id="dangKyCaBinhThuongButton" text="Đăng Ký Ca Bình Thường" onAction="#handleDangKyCaBinhThuong"
-                                   GridPane.columnIndex="1" GridPane.rowIndex="2"
-                                   style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
-                                   prefWidth="200" prefHeight="35"/>
-                        </GridPane>
-                        
-                        <Label fx:id="messageCaBinhThuongLabel" textFill="RED" wrapText="true" visible="false"/>
+                <!-- Regular Shift Card -->
+                <VBox prefWidth="500" styleClass="card" HBox.hgrow="ALWAYS">
+                    <VBox styleClass="card-header">
+                        <Label styleClass="card-title" text="📋 Đăng Ký Ca Bình Thường" />
+                        <Label styleClass="text-muted" text="Đăng ký ca làm việc có sẵn trong hệ thống" />
                     </VBox>
-                </Tab>
+                    
+                    <VBox spacing="20" styleClass="card-body">
+                        <VBox styleClass="form-group">
+                            <Label styleClass="form-label" text="Ngày làm việc" />
+                            <DatePicker fx:id="ngayLamCaBinhThuongPicker" promptText="Chọn ngày làm việc" />
+                        </VBox>
+                        
+                        <VBox styleClass="form-group">
+                            <Label styleClass="form-label" text="Ca làm việc" />
+                            <ComboBox fx:id="caLamComboBox" maxWidth="Infinity" promptText="Chọn ca làm việc" />
+                            <Label fx:id="caLamInfoLabel" styleClass="text-muted" text="" />
+                        </VBox>
+                        
+                        <Button fx:id="dangKyCaBinhThuongButton" maxWidth="Infinity" onAction="#handleDangKyCaBinhThuong" styleClass="btn, btn-success" text="📋 Đăng Ký Ca Bình Thường" />
+                        
+                        <Label fx:id="messageCaBinhThuongLabel" visible="false" wrapText="true" />
+                    </VBox>
+                </VBox>
                 
-                <!-- Tab 2: Ca gãy -->
-                <Tab text="⚡ Đăng ký Ca Gãy">
-                    <VBox spacing="15" style="-fx-padding: 20;">
-                        <Label text="Đăng ký ca làm việc đột xuất (tự chọn giờ)" style="-fx-font-size: 14; -fx-text-fill: #7f8c8d;"/>
-                        
-                        <GridPane hgap="15" vgap="15">
-                            <Label text="Ngày làm việc:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                            <DatePicker fx:id="ngayLamCaGayPicker" promptText="Chọn ngày" 
-                                       GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="200"/>
-                            
-                            <Label text="Giờ bắt đầu:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                            <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                                <Spinner fx:id="gioBatDauSpinner" prefWidth="70" editable="true"/>
-                                <Label text=":" style="-fx-font-size: 18;"/>
-                                <Spinner fx:id="phutBatDauSpinner" prefWidth="70" editable="true"/>
-                            </HBox>
-                            
-                            <Label text="Giờ kết thúc:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-                            <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="2">
-                                <Spinner fx:id="gioKetThucSpinner" prefWidth="70" editable="true"/>
-                                <Label text=":" style="-fx-font-size: 18;"/>
-                                <Spinner fx:id="phutKetThucSpinner" prefWidth="70" editable="true"/>
-                            </HBox>
-                            
-                            <Button fx:id="dangKyCaGayButton" text="Đăng Ký Ca Gãy" onAction="#handleDangKyCaGay"
-                                   GridPane.columnIndex="1" GridPane.rowIndex="3"
-                                   style="-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
-                                   prefWidth="200" prefHeight="35"/>
-                        </GridPane>
-                        
-                        <Label fx:id="messageCaGayLabel" textFill="RED" wrapText="true" visible="false"/>
+                <!-- Flexible Shift Card -->
+                <VBox prefWidth="500" styleClass="card" HBox.hgrow="ALWAYS">
+                    <VBox styleClass="card-header">
+                        <Label styleClass="card-title" text="⚡ Đăng Ký Ca Gãy" />
+                        <Label styleClass="text-muted" text="Đăng ký ca làm việc linh hoạt theo thời gian cá nhân" />
                     </VBox>
-                </Tab>
-            </TabPane>
+                    
+                    <VBox spacing="20" styleClass="card-body">
+                        <VBox styleClass="form-group">
+                            <Label styleClass="form-label" text="Ngày làm việc" />
+                            <DatePicker fx:id="ngayLamCaGayPicker" promptText="Chọn ngày làm việc" />
+                        </VBox>
+                        
+                        <HBox spacing="15">
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label styleClass="form-label" text="Giờ bắt đầu" />
+                                <HBox spacing="5" alignment="CENTER">
+                                    <Spinner fx:id="gioBatDauSpinner" prefWidth="80" minWidth="80" editable="true" styleClass="spinner"/>
+                                    <Label text=":" styleClass="text-bold"/>
+                                    <Spinner fx:id="phutBatDauSpinner" prefWidth="80" minWidth="80" editable="true" styleClass="spinner"/>
+                                </HBox>
+                            </VBox>
+                            
+                            <VBox styleClass="form-group" HBox.hgrow="ALWAYS">
+                                <Label styleClass="form-label" text="Giờ kết thúc" />
+                                <HBox spacing="5" alignment="CENTER">
+                                    <Spinner fx:id="gioKetThucSpinner" prefWidth="80" minWidth="80" editable="true" styleClass="spinner"/>
+                                    <Label text=":" styleClass="text-bold"/>
+                                    <Spinner fx:id="phutKetThucSpinner" prefWidth="80" minWidth="80" editable="true" styleClass="spinner"/>
+                                </HBox>
+                            </VBox>
+                        </HBox>
+                        
+                        <!-- Add spacing to align with regular shift button -->
+                        <Region prefHeight="20" />
+                        
+                        <Button fx:id="dangKyCaGayButton" maxWidth="Infinity" onAction="#handleDangKyCaGay" styleClass="btn, btn-warning" text="⚡ Đăng Ký Ca Gãy" />
+                        
+                        <Label fx:id="messageCaGayLabel" visible="false" wrapText="true" />
+                    </VBox>
+                </VBox>
+            </HBox>
             
-            <!-- Danh sách đăng ký của tôi -->
-            <VBox spacing="15" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10;" VBox.vgrow="ALWAYS">
-                <HBox alignment="CENTER_LEFT" spacing="10">
-                    <Label text="📋 Lịch Làm Việc Của Tôi" style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Button text="🔄 Làm mới" onAction="#handleRefresh" 
-                           style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-cursor: hand;"/>
+            <!-- My Schedule Section -->
+            <VBox styleClass="card" VBox.vgrow="ALWAYS">
+                <VBox styleClass="card-header">
+                    <HBox alignment="CENTER_LEFT" spacing="15">
+                        <Label styleClass="card-title" text="📋 Lịch Làm Việc Của Tôi" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        
+                        <!-- Auto-refresh indicator -->
+                        <Label styleClass="text-success, text-bold" text="🔄 Tự động cập nhật" />
+                    </HBox>
+                </VBox>
+                
+                <!-- Search and Filter Bar -->
+                <HBox styleClass="search-bar">
+                    <HBox alignment="CENTER_LEFT" spacing="15" HBox.hgrow="ALWAYS">
+                        <Label styleClass="form-label" text="🔍 Tìm kiếm:" />
+                        <TextField fx:id="searchField" onKeyReleased="#handleSearch" promptText="Tìm kiếm theo mô tả, ngày..." styleClass="search-field" />
+                        
+                        <Label styleClass="form-label" text="Lọc:" />
+                        <ComboBox fx:id="statusFilterCombo" onAction="#handleFilter" promptText="Tất cả trạng thái" styleClass="filter-combo" />
+                        
+                        <ComboBox fx:id="typeFilterCombo" onAction="#handleFilter" promptText="Tất cả loại ca" styleClass="filter-combo" />
+                        
+                        <Button onAction="#handleManualRefresh" styleClass="btn, btn-primary" text="🔄 Làm mới dữ liệu" />
+                    </HBox>
                 </HBox>
                 
-                <TableView fx:id="dangKyTableView" VBox.vgrow="ALWAYS">
-                    <columns>
-                        <TableColumn fx:id="colNgayLam" text="Ngày làm" prefWidth="100"/>
-                        <TableColumn fx:id="colLoaiCa" text="Loại ca" prefWidth="120"/>
-                        <TableColumn fx:id="colCaLam" text="Mô tả" prefWidth="150"/>
-                        <TableColumn fx:id="colGioBatDau" text="Giờ bắt đầu" prefWidth="90"/>
-                        <TableColumn fx:id="colGioKetThuc" text="Giờ kết thúc" prefWidth="90"/>
-                        <TableColumn fx:id="colThoiGianDangKy" text="Thời gian đăng ký" prefWidth="150"/>
-                        <TableColumn fx:id="colTrangThai" text="Trạng thái" prefWidth="120"/>
-                        <TableColumn fx:id="colAction" text="Hành động" prefWidth="100"/>
-                    </columns>
-                </TableView>
+                <!-- Enhanced Table -->
+                <VBox styleClass="card-body" VBox.vgrow="ALWAYS">
+                    <TableView fx:id="dangKyTableView" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colNgayLam" maxWidth="Infinity" minWidth="100" text="Ngày Làm" />
+                            <TableColumn fx:id="colLoaiCa" maxWidth="Infinity" minWidth="100" text="Loại Ca" />
+                            <TableColumn fx:id="colCaLam" maxWidth="Infinity" minWidth="150" text="Mô Tả" />
+                            <TableColumn fx:id="colGioBatDau" maxWidth="Infinity" minWidth="80" text="Giờ BĐ" />
+                            <TableColumn fx:id="colGioKetThuc" maxWidth="Infinity" minWidth="80" text="Giờ KT" />
+                            <TableColumn fx:id="colThoiGianDangKy" maxWidth="Infinity" minWidth="130" text="Thời Gian ĐK" />
+                            <TableColumn fx:id="colTrangThai" maxWidth="Infinity" minWidth="110" text="Trạng Thái" />
+                            <TableColumn fx:id="colAction" maxWidth="Infinity" minWidth="100" text="Hành Động" />
+                        </columns>
+                  <columnResizePolicy>
+                     <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                  </columnResizePolicy>
+                    </TableView>
+                </VBox>
             </VBox>
             
         </VBox>

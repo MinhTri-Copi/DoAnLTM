@@ -1,0 +1,479 @@
+/* =============================================
+   PROFESSIONAL USER DASHBOARD STYLES
+   ============================================= */
+
+/* Root Variables */
+.root {
+    -fx-font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 14px;
+    
+    /* Color Palette */
+    -primary-color: #2c3e50;
+    -primary-dark: #1a252f;
+    -secondary-color: #3498db;
+    -secondary-hover: #2980b9;
+    -success-color: #27ae60;
+    -success-hover: #229954;
+    -warning-color: #f39c12;
+    -warning-hover: #e67e22;
+    -danger-color: #e74c3c;
+    -danger-hover: #c0392b;
+    -info-color: #17a2b8;
+    -light-bg: #f8f9fa;
+    -card-bg: #ffffff;
+    -border-color: #dee2e6;
+    -text-color: #343a40;
+    -text-muted: #6c757d;
+    -shadow: rgba(0, 0, 0, 0.1);
+}
+
+/* =============================================
+   LAYOUT & CONTAINERS
+   ============================================= */
+
+.main-container {
+    -fx-background-color: -light-bg;
+    -fx-padding: 0;
+}
+
+/* Header Bar */
+.header-bar {
+    -fx-background-color: linear-gradient(to right, -primary-color, -primary-dark);
+    -fx-padding: 15 20;
+    -fx-effect: dropshadow(gaussian, -shadow, 5, 0, 0, 2);
+}
+
+.header-title {
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 2, 0, 1, 1);
+}
+
+.header-user-info {
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+    -fx-opacity: 0.9;
+}
+
+/* Content Area */
+.content-area {
+    -fx-padding: 25;
+    -fx-spacing: 25;
+}
+
+/* Cards */
+.card {
+    -fx-background-color: -card-bg;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, -shadow, 8, 0, 0, 2);
+    -fx-border-color: -border-color;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+}
+
+.card-header {
+    -fx-padding: 20 25 15 25;
+    -fx-border-color: -border-color;
+    -fx-border-width: 0 0 1 0;
+}
+
+.card-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -primary-color;
+}
+
+.card-body {
+    -fx-padding: 20 25;
+}
+
+/* =============================================
+   NAVIGATION & TABS
+   ============================================= */
+
+.tab-pane {
+    -fx-tab-min-height: 45;
+}
+
+.tab-pane .tab-header-area {
+    -fx-padding: 0 0 0 0;
+}
+
+.tab-pane .tab {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8 8 0 0;
+    -fx-border-color: transparent transparent -border-color transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-padding: 12 20;
+    -fx-cursor: hand;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: -secondary-color;
+    -fx-border-color: transparent transparent -secondary-color transparent;
+}
+
+.tab-pane .tab .tab-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-muted;
+}
+
+.tab-pane .tab:selected .tab-label {
+    -fx-text-fill: white;
+}
+
+/* =============================================
+   FORM CONTROLS
+   ============================================= */
+
+.form-group {
+    -fx-spacing: 8;
+    -fx-padding: 0 0 15 0;
+}
+
+.form-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -text-color;
+}
+
+.text-field, .password-field, .combo-box, .date-picker {
+    -fx-pref-height: 40;
+    -fx-background-color: -card-bg;
+    -fx-background-radius: 6;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-padding: 8 12;
+    -fx-font-size: 14px;
+}
+
+.text-field:focused, .password-field:focused, .combo-box:focused, .date-picker:focused {
+    -fx-border-color: -secondary-color;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(52, 152, 219, 0.3), 4, 0, 0, 0);
+}
+
+.combo-box .list-cell {
+    -fx-padding: 8 12;
+}
+
+/* =============================================
+   BUTTONS
+   ============================================= */
+
+.btn {
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-padding: 12 24;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 3, 0, 0, 1);
+}
+
+.btn-primary {
+    -fx-background-color: -secondary-color;
+    -fx-text-fill: white;
+}
+
+.btn-primary:hover {
+    -fx-background-color: -secondary-hover;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0, 0, 2);
+}
+
+.btn-success {
+    -fx-background-color: -success-color;
+    -fx-text-fill: white;
+}
+
+.btn-success:hover {
+    -fx-background-color: -success-hover;
+}
+
+.btn-warning {
+    -fx-background-color: -warning-color;
+    -fx-text-fill: white;
+}
+
+.btn-warning:hover {
+    -fx-background-color: -warning-hover;
+}
+
+.btn-danger {
+    -fx-background-color: -danger-color;
+    -fx-text-fill: white;
+}
+
+.btn-danger:hover {
+    -fx-background-color: -danger-hover;
+}
+
+.btn-outline {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+    -fx-border-color: rgba(255, 255, 255, 0.5);
+    -fx-border-width: 2;
+    -fx-border-radius: 6;
+    -fx-text-fill: white;
+}
+
+.btn-outline:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.3);
+    -fx-border-color: white;
+    -fx-text-fill: white;
+}
+
+/* =============================================
+   TABLE STYLES
+   ============================================= */
+
+.table-view {
+    -fx-background-color: -card-bg;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+    -fx-border-color: transparent transparent -border-color transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.table-view .column-header {
+    -fx-padding: 15 10;
+    -fx-font-weight: bold;
+    -fx-text-fill: -primary-color;
+    -fx-font-size: 13px;
+    -fx-alignment: CENTER;
+}
+
+.table-view .table-cell {
+    -fx-padding: 12 10;
+    -fx-border-color: transparent transparent -border-color transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-font-size: 13px;
+    -fx-alignment: CENTER;
+}
+
+/* Force table columns to distribute evenly */
+.table-view .table-column {
+    -fx-alignment: CENTER;
+}
+
+.table-view {
+    -fx-column-resize-policy: constrained;
+}
+
+.table-row-cell {
+    -fx-background-color: transparent;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #f8f9fa;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: rgba(52, 152, 219, 0.1);
+    -fx-border-color: -secondary-color;
+    -fx-border-width: 0 0 0 3;
+}
+
+/* Status Colors in Table */
+.status-pending {
+    -fx-background-color: rgba(243, 156, 18, 0.1);
+    -fx-text-fill: #d68910;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4;
+    -fx-padding: 4 8;
+}
+
+.status-approved {
+    -fx-background-color: rgba(39, 174, 96, 0.1);
+    -fx-text-fill: #27ae60;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4;
+    -fx-padding: 4 8;
+}
+
+.status-rejected {
+    -fx-background-color: rgba(231, 76, 60, 0.1);
+    -fx-text-fill: #e74c3c;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4;
+    -fx-padding: 4 8;
+}
+
+/* =============================================
+   SEARCH & FILTER BAR
+   ============================================= */
+
+.search-bar {
+    -fx-background-color: -card-bg;
+    -fx-padding: 15 20;
+    -fx-spacing: 15;
+    -fx-background-radius: 8;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, -shadow, 3, 0, 0, 1);
+}
+
+.search-field {
+    -fx-pref-width: 250;
+    -fx-prompt-text-fill: -text-muted;
+}
+
+.filter-combo {
+    -fx-pref-width: 150;
+}
+
+/* =============================================
+   SPINNER STYLES
+   ============================================= */
+
+.spinner {
+    -fx-background-color: -card-bg;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
+    -fx-pref-width: 80px;
+    -fx-min-width: 80px;
+}
+
+.spinner .text-field {
+    -fx-text-fill: #2c3e50 !important;
+    -fx-background-color: white !important;
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-alignment: CENTER;
+    -fx-prompt-text-fill: #7f8c8d;
+    -fx-opacity: 1.0;
+    -fx-padding: 5px 8px;
+    -fx-pref-width: 50px;
+    -fx-min-width: 50px;
+}
+
+.spinner:focused .text-field {
+    -fx-text-fill: #2c3e50 !important;
+    -fx-border-color: #3498db;
+    -fx-border-width: 2;
+    -fx-opacity: 1.0;
+}
+
+/* Force spinner text visibility */
+.spinner > .text-field {
+    -fx-text-fill: #2c3e50 !important;
+    -fx-opacity: 1.0 !important;
+    visibility: visible !important;
+}
+
+.spinner:focused > .text-field {
+    -fx-text-fill: #2c3e50 !important;
+    -fx-opacity: 1.0 !important;
+}
+
+.spinner .increment-arrow-button,
+.spinner .decrement-arrow-button {
+    -fx-background-color: -secondary-color;
+    -fx-background-radius: 0;
+}
+
+.spinner .increment-arrow-button:hover,
+.spinner .decrement-arrow-button:hover {
+    -fx-background-color: -secondary-hover;
+}
+
+.spinner .increment-arrow,
+.spinner .decrement-arrow {
+    -fx-background-color: white;
+}
+
+/* Đảm bảo spinner arrows không chiếm quá nhiều chỗ */
+.spinner .increment-arrow-button,
+.spinner .decrement-arrow-button {
+    -fx-pref-width: 20px;
+    -fx-min-width: 20px;
+    -fx-max-width: 20px;
+}
+
+/* Đảm bảo text field có đủ không gian */
+.spinner > .text-field {
+    -fx-text-overrun: CLIP;
+    -fx-wrap-text: false;
+}
+
+/* =============================================
+   ALERTS & MESSAGES
+   ============================================= */
+
+.alert-success {
+    -fx-background-color: rgba(39, 174, 96, 0.1);
+    -fx-border-color: #27ae60;
+    -fx-border-width: 0 0 0 4;
+    -fx-padding: 12 15;
+    -fx-background-radius: 4;
+    -fx-text-fill: #1e8449;
+}
+
+.alert-danger {
+    -fx-background-color: rgba(231, 76, 60, 0.1);
+    -fx-border-color: #e74c3c;
+    -fx-border-width: 0 0 0 4;
+    -fx-padding: 12 15;
+    -fx-background-radius: 4;
+    -fx-text-fill: #c0392b;
+}
+
+.alert-info {
+    -fx-background-color: rgba(23, 162, 184, 0.1);
+    -fx-border-color: #17a2b8;
+    -fx-border-width: 0 0 0 4;
+    -fx-padding: 12 15;
+    -fx-background-radius: 4;
+    -fx-text-fill: #117a8b;
+}
+
+/* =============================================
+   UTILITY CLASSES
+   ============================================= */
+
+.text-center { -fx-alignment: center; }
+.text-right { -fx-alignment: center-right; }
+.text-bold { -fx-font-weight: bold; }
+.text-muted { -fx-text-fill: -text-muted; }
+.text-primary { -fx-text-fill: -primary-color; }
+.text-success { -fx-text-fill: -success-color; }
+.text-warning { -fx-text-fill: -warning-color; }
+.text-danger { -fx-text-fill: -danger-color; }
+
+.mb-10 { -fx-padding: 0 0 10 0; }
+.mb-15 { -fx-padding: 0 0 15 0; }
+.mb-20 { -fx-padding: 0 0 20 0; }
+
+/* =============================================
+   RESPONSIVE DESIGN
+   ============================================= */
+
+.small-screen .card-body {
+    -fx-padding: 15 20;
+}
+
+.small-screen .btn {
+    -fx-padding: 10 20;
+    -fx-font-size: 13px;
+}
+
+/* =============================================
+   ANIMATIONS & TRANSITIONS
+   ============================================= */
+
+.fade-in {
+    -fx-opacity: 0;
+}
+
+.slide-in {
+    -fx-translate-y: 20;
+    -fx-opacity: 0;
+}

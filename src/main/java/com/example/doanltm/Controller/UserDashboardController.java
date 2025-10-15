@@ -105,21 +105,49 @@ public class UserDashboardController {
         if (gioBatDauSpinner != null) {
             SpinnerValueFactory<Integer> gioFactory1 = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, 8);
             gioBatDauSpinner.setValueFactory(gioFactory1);
+            gioBatDauSpinner.setEditable(true);
+            gioBatDauSpinner.getEditor().setStyle("-fx-text-fill: #2c3e50 !important; -fx-background-color: white !important; -fx-font-size: 14px; -fx-font-weight: bold; -fx-alignment: center; -fx-opacity: 1.0 !important;");
+            // Force display and commit value
+            Platform.runLater(() -> {
+                gioBatDauSpinner.getEditor().setText("8");
+                gioBatDauSpinner.commitValue();
+            });
         }
 
         if (gioKetThucSpinner != null) {
             SpinnerValueFactory<Integer> gioFactory2 = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, 17);
             gioKetThucSpinner.setValueFactory(gioFactory2);
+            gioKetThucSpinner.setEditable(true);
+            gioKetThucSpinner.getEditor().setStyle("-fx-text-fill: #2c3e50 !important; -fx-background-color: white !important; -fx-font-size: 14px; -fx-font-weight: bold; -fx-alignment: center; -fx-opacity: 1.0 !important;");
+            // Force display and commit value
+            Platform.runLater(() -> {
+                gioKetThucSpinner.getEditor().setText("17");
+                gioKetThucSpinner.commitValue();
+            });
         }
 
         if (phutBatDauSpinner != null) {
             SpinnerValueFactory<Integer> phutFactory1 = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, 0);
             phutBatDauSpinner.setValueFactory(phutFactory1);
+            phutBatDauSpinner.setEditable(true);
+            phutBatDauSpinner.getEditor().setStyle("-fx-text-fill: #2c3e50 !important; -fx-background-color: white !important; -fx-font-size: 14px; -fx-font-weight: bold; -fx-alignment: center; -fx-opacity: 1.0 !important;");
+            // Force display and commit value
+            Platform.runLater(() -> {
+                phutBatDauSpinner.getEditor().setText("0");
+                phutBatDauSpinner.commitValue();
+            });
         }
 
         if (phutKetThucSpinner != null) {
             SpinnerValueFactory<Integer> phutFactory2 = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, 0);
             phutKetThucSpinner.setValueFactory(phutFactory2);
+            phutKetThucSpinner.setEditable(true);
+            phutKetThucSpinner.getEditor().setStyle("-fx-text-fill: #2c3e50 !important; -fx-background-color: white !important; -fx-font-size: 14px; -fx-font-weight: bold; -fx-alignment: center; -fx-opacity: 1.0 !important;");
+            // Force display and commit value
+            Platform.runLater(() -> {
+                phutKetThucSpinner.getEditor().setText("0");
+                phutKetThucSpinner.commitValue();
+            });
         }
     }
 
@@ -194,6 +222,9 @@ public class UserDashboardController {
 
     private void setupTableView() {
         if (dangKyTableView == null) return;
+
+        // Set column resize policy to distribute columns evenly
+        dangKyTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         if (colNgayLam != null) {
             colNgayLam.setCellValueFactory(cellData ->
