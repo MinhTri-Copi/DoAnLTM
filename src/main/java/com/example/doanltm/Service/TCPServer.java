@@ -15,13 +15,16 @@ import java.util.concurrent.Executors;
 public class TCPServer {
     private static final int PORT = 8888;
     private static final int MAX_CLIENTS = 50;
-
+    
     private ServerSocket serverSocket;
     private ExecutorService threadPool;
     private boolean isRunning = false;
+    private int clientCount = 0;  // Đếm số client đang kết nối
 
     public TCPServer() {
-        threadPool = Executors.newFixedThreadPool(MAX_CLIENTS);
+        // Sử dụng CachedThreadPool thay vì FixedThreadPool cho hiệu quả tốt hơn
+        threadPool = Executors.newCachedThreadPool();
+        System.out.println("🛠️ Khởi tạo Thread Pool - MAX_CLIENTS: " + MAX_CLIENTS);
     }
 
     public void start() {
@@ -33,10 +36,25 @@ public class TCPServer {
 
             while (isRunning) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("✅ Client mới kết nối: " + clientSocket.getInetAddress());
+                
+                synchronized (this) {
+                    clientCount++;
+                    System.out.println("✅ Client mới kết nối: " + clientSocket.getInetAddress() + 
+                                     " [Tổng: " + clientCount + "/" + MAX_CLIENTS + "]");
+                }
+                
+                // Kiểm tra giới hạn client
+                if (clientCount > MAX_CLIENTS) {
+                    System.out.println("⚠️ Vượt quá giới hạn client! Từ chối kết nối.");
+                    clientSocket.close();
+                    synchronized (this) {
+                        clientCount--;
+                    }
+                    continue;
+                }
 
                 // Xử lý client trong thread pool
-                threadPool.execute(new ClientHandler(clientSocket));
+                threadPool.execute(new ClientHandler(clientSocket, this));
             }
 
         } catch (IOException e) {
@@ -55,11 +73,27 @@ public class TCPServer {
             }
             if (threadPool != null) {
                 threadPool.shutdown();
+                System.out.println("📊 Đang chờ tất cả client ngắt kết nối...");
+                try {
+                    if (!threadPool.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                        threadPool.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
+                    threadPool.shutdownNow();
+                }
             }
-            System.out.println("🛑 Server đã dừng!");
+            System.out.println("🛑 Server đã dừng hoàn toàn!");
         } catch (IOException e) {
             System.err.println("❌ Lỗi khi dừng server: " + e.getMessage());
         }
+    }
+    
+    /**
+     * Giảm số client count khi client ngắt kết nối
+     */
+    public synchronized void decrementClientCount() {
+        clientCount--;
+        System.out.println("📊 Client ngắt kết nối. Còn lại: " + clientCount + "/" + MAX_CLIENTS);
     }
 
     /**
@@ -69,17 +103,23 @@ public class TCPServer {
         private Socket clientSocket;
         private ObjectInputStream in;
         private ObjectOutputStream out;
+        private TCPServer server;  // Tham chiếu tới server
+        private String clientId;   // ID client cho dễ debug
 
         // DAOs
         private UserDAO userDAO;
         private CaLamDAO caLamDAO;
         private DangKyDAO dangKyDAO;
 
-        public ClientHandler(Socket socket) {
+        public ClientHandler(Socket socket, TCPServer server) {
             this.clientSocket = socket;
+            this.server = server;
+            this.clientId = socket.getInetAddress() + ":" + socket.getPort();
             this.userDAO = new UserDAO();
             this.caLamDAO = new CaLamDAO();
             this.dangKyDAO = new DangKyDAO();
+            
+            System.out.println("🔍 ClientHandler tạo cho: " + clientId);
         }
 
         @Override
@@ -109,9 +149,9 @@ public class TCPServer {
                 }
 
             } catch (EOFException e) {
-                System.out.println("📤 Client đã ngắt kết nối: " + clientSocket.getInetAddress());
+                System.out.println("📤 Client đã ngắt kết nối bình thường: " + clientId);
             } catch (IOException | ClassNotFoundException e) {
-                System.err.println("❌ Lỗi xử lý client: " + e.getMessage());
+                System.err.println("❌ Lỗi xử lý client " + clientId + ": " + e.getMessage());
             } finally {
                 closeConnection();
             }
@@ -314,10 +354,19 @@ public class TCPServer {
             try {
                 if (in != null) in.close();
                 if (out != null) out.close();
-                if (clientSocket != null) clientSocket.close();
-                System.out.println("🔌 Đã đóng kết nối client\n");
+                if (clientSocket != null && !clientSocket.isClosed()) {
+                    clientSocket.close();
+                }
+                
+                // Giảm client count
+                if (server != null) {
+                    server.decrementClientCount();
+                }
+                
+                System.out.println("🔌 Đã đóng kết nối client: " + clientId + "\n");
+                
             } catch (IOException e) {
-                System.err.println("❌ Lỗi khi đóng kết nối: " + e.getMessage());
+                System.err.println("❌ Lỗi khi đóng kết nối " + clientId + ": " + e.getMessage());
             }
         }
     }
