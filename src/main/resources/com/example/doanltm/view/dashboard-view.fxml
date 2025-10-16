@@ -11,12 +11,13 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane prefHeight="800.0" prefWidth="1200.0" styleClass="main-container" stylesheets="@../styles/dashboard.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.doanltm.Controller.EnhancedUserDashboardController">
+<BorderPane minHeight="600.0" minWidth="800.0" prefHeight="800.0" prefWidth="1200.0" styleClass="main-container" stylesheets="@../styles/dashboard.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.doanltm.Controller.EnhancedUserDashboardController">
     
     <!-- Professional Header Bar -->
     <top>
@@ -25,7 +26,7 @@
             
             <Region HBox.hgrow="ALWAYS" />
             
-            <Label styleClass="header-title" text="Hệ Thống Quản Lý Lịch Làm Việc" />
+            <Label styleClass="header-title" text="Hệ Thống Quản Lý Lịch Làm Việc" wrapText="true" />
             
             <Region HBox.hgrow="ALWAYS" />
             
@@ -48,16 +49,17 @@
     
     <!-- Main Content Area -->
     <center>
-        <VBox styleClass="content-area">
+        <ScrollPane fitToWidth="true" hbarPolicy="AS_NEEDED" vbarPolicy="AS_NEEDED" styleClass="scroll-pane">
+            <VBox styleClass="content-area">
             
             <!-- Registration Cards -->
-            <HBox alignment="TOP_CENTER" spacing="25">
+            <HBox alignment="TOP_CENTER" spacing="25" styleClass="cards-container">
                 
                 <!-- Regular Shift Card -->
-                <VBox prefWidth="500" styleClass="card" HBox.hgrow="ALWAYS">
+                <VBox minWidth="350" prefWidth="450" maxWidth="500" styleClass="card" HBox.hgrow="ALWAYS">
                     <VBox styleClass="card-header">
-                        <Label styleClass="card-title" text="📋 Đăng Ký Ca Bình Thường" />
-                        <Label styleClass="text-muted" text="Đăng ký ca làm việc có sẵn trong hệ thống" />
+                        <Label styleClass="card-title" text="📋 Đăng Ký Ca Bình Thường" wrapText="true" />
+                        <Label styleClass="text-muted" text="Đăng ký ca làm việc có sẵn trong hệ thống" wrapText="true" />
                     </VBox>
                     
                     <VBox spacing="20" styleClass="card-body">
@@ -79,10 +81,10 @@
                 </VBox>
                 
                 <!-- Flexible Shift Card -->
-                <VBox prefWidth="500" styleClass="card" HBox.hgrow="ALWAYS">
+                <VBox minWidth="350" prefWidth="450" maxWidth="500" styleClass="card" HBox.hgrow="ALWAYS">
                     <VBox styleClass="card-header">
-                        <Label styleClass="card-title" text="⚡ Đăng Ký Ca Gãy" />
-                        <Label styleClass="text-muted" text="Đăng ký ca làm việc linh hoạt theo thời gian cá nhân" />
+                        <Label styleClass="card-title" text="⚡ Đăng Ký Ca Gãy" wrapText="true" />
+                        <Label styleClass="text-muted" text="Đăng ký ca làm việc linh hoạt theo thời gian cá nhân" wrapText="true" />
                     </VBox>
                     
                     <VBox spacing="20" styleClass="card-body">
@@ -150,16 +152,16 @@
                 
                 <!-- Enhanced Table -->
                 <VBox styleClass="card-body" VBox.vgrow="ALWAYS">
-                    <TableView fx:id="dangKyTableView" VBox.vgrow="ALWAYS">
+                    <TableView fx:id="dangKyTableView" VBox.vgrow="ALWAYS" minHeight="300" prefHeight="400">
                         <columns>
-                            <TableColumn fx:id="colNgayLam" maxWidth="Infinity" minWidth="100" text="Ngày Làm" />
-                            <TableColumn fx:id="colLoaiCa" maxWidth="Infinity" minWidth="100" text="Loại Ca" />
-                            <TableColumn fx:id="colCaLam" maxWidth="Infinity" minWidth="150" text="Mô Tả" />
-                            <TableColumn fx:id="colGioBatDau" maxWidth="Infinity" minWidth="80" text="Giờ BĐ" />
-                            <TableColumn fx:id="colGioKetThuc" maxWidth="Infinity" minWidth="80" text="Giờ KT" />
-                            <TableColumn fx:id="colThoiGianDangKy" maxWidth="Infinity" minWidth="130" text="Thời Gian ĐK" />
-                            <TableColumn fx:id="colTrangThai" maxWidth="Infinity" minWidth="110" text="Trạng Thái" />
-                            <TableColumn fx:id="colAction" maxWidth="Infinity" minWidth="100" text="Hành Động" />
+                            <TableColumn fx:id="colNgayLam" maxWidth="Infinity" minWidth="90" prefWidth="90" text="Ngày Làm" />
+                            <TableColumn fx:id="colLoaiCa" maxWidth="Infinity" minWidth="80" prefWidth="80" text="Loại Ca" />
+                            <TableColumn fx:id="colCaLam" maxWidth="Infinity" minWidth="120" prefWidth="150" text="Mô Tả" />
+                            <TableColumn fx:id="colGioBatDau" maxWidth="Infinity" minWidth="70" prefWidth="70" text="Giờ BĐ" />
+                            <TableColumn fx:id="colGioKetThuc" maxWidth="Infinity" minWidth="70" prefWidth="70" text="Giờ KT" />
+                            <TableColumn fx:id="colThoiGianDangKy" maxWidth="Infinity" minWidth="110" prefWidth="120" text="Thời Gian ĐK" />
+                            <TableColumn fx:id="colTrangThai" maxWidth="Infinity" minWidth="90" prefWidth="100" text="Trạng Thái" />
+                            <TableColumn fx:id="colAction" maxWidth="Infinity" minWidth="90" prefWidth="90" text="Hành Động" />
                         </columns>
                   <columnResizePolicy>
                      <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -168,7 +170,8 @@
                 </VBox>
             </VBox>
             
-        </VBox>
+            </VBox>
+        </ScrollPane>
     </center>
     
 </BorderPane>

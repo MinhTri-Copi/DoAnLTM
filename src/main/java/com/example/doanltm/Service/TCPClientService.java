@@ -1,6 +1,11 @@
 package com.example.doanltm.Service;
 
 import com.example.doanltm.Model.*;
+import com.example.doanltm.Request.*;
+import com.example.doanltm.Response.DangKyResponse;
+import com.example.doanltm.Response.GetCaLamResponse;
+import com.example.doanltm.Response.GetDangKyResponse;
+import com.example.doanltm.Response.HuyDangKyResponse;
 
 import java.io.*;
 import java.net.Socket;

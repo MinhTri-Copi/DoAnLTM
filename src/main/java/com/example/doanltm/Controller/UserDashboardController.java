@@ -2,6 +2,14 @@
 package com.example.doanltm.Controller;
 
 import com.example.doanltm.Model.*;
+import com.example.doanltm.Request.DangKyRequest;
+import com.example.doanltm.Request.GetCaLamRequest;
+import com.example.doanltm.Request.GetDangKyRequest;
+import com.example.doanltm.Request.HuyDangKyRequest;
+import com.example.doanltm.Response.DangKyResponse;
+import com.example.doanltm.Response.GetCaLamResponse;
+import com.example.doanltm.Response.GetDangKyResponse;
+import com.example.doanltm.Response.HuyDangKyResponse;
 import com.example.doanltm.Service.TCPClientService;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
