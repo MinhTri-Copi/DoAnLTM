@@ -20,7 +20,7 @@ module com.example.doanltm {
     opens com.example.doanltm.Service to javafx.fxml;
     opens com.example.doanltm.Test to javafx.fxml;
     opens com.example.doanltm.Database to javafx.fxml;
-
+    opens com.example.doanltm.DAO to javafx.fxml;
 
 
     exports com.example.doanltm;
@@ -29,9 +29,12 @@ module com.example.doanltm {
   exports com.example.doanltm.Test;
     exports com.example.doanltm.Controller;
     exports com.example.doanltm.Database;
+    exports com.example.doanltm.Response;
+    exports com.example.doanltm.Request;
+    exports com.example.doanltm.DAO;
+    opens com.example.doanltm.Request to javafx.base, javafx.fxml;
+    opens com.example.doanltm.Response to javafx.base, javafx.fxml;
 
-
-//
 
 }
 

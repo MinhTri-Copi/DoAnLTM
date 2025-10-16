@@ -1,5 +1,5 @@
 
-package com.example.doanltm.Model;
+package com.example.doanltm.Request;
 
 import java.io.Serializable;
 import java.time.LocalDate;

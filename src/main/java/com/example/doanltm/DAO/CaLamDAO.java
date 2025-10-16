@@ -1,6 +1,7 @@
 
-package com.example.doanltm.Database;
+package com.example.doanltm.DAO;
 
+import com.example.doanltm.Database.BDConnection;
 import com.example.doanltm.Model.CaLam;
 
 import java.sql.*;

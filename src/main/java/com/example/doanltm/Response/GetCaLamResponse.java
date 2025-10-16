@@ -1,26 +1,28 @@
-package com.example.doanltm.Model;
+package com.example.doanltm.Response;
+
+import com.example.doanltm.Model.CaLam;
 
 import java.io.Serializable;
 import java.util.List;
 
-public class GetDangKyResponse implements Serializable {
+public class GetCaLamResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private boolean success;
     private String message;
-    private List<DangKy> dangKyList;
+    private List<CaLam> caLamList;
 
-    public GetDangKyResponse() {}
+    public GetCaLamResponse() {}
 
-    public GetDangKyResponse(boolean success, String message) {
+    public GetCaLamResponse(boolean success, String message) {
         this.success = success;
         this.message = message;
     }
 
-    public GetDangKyResponse(boolean success, String message, List<DangKy> dangKyList) {
+    public GetCaLamResponse(boolean success, String message, List<CaLam> caLamList) {
         this.success = success;
         this.message = message;
-        this.dangKyList = dangKyList;
+        this.caLamList = caLamList;
     }
 
     public boolean isSuccess() {
@@ -39,11 +41,11 @@ public class GetDangKyResponse implements Serializable {
         this.message = message;
     }
 
-    public List<DangKy> getDangKyList() {
-        return dangKyList;
+    public List<CaLam> getCaLamList() {
+        return caLamList;
     }
 
-    public void setDangKyList(List<DangKy> dangKyList) {
-        this.dangKyList = dangKyList;
+    public void setCaLamList(List<CaLam> caLamList) {
+        this.caLamList = caLamList;
     }
 }

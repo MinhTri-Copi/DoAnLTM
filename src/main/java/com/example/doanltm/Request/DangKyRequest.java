@@ -1,4 +1,6 @@
-package com.example.doanltm.Model;
+package com.example.doanltm.Request;
+
+import com.example.doanltm.Model.DangKy;
 
 import java.io.Serializable;
 
