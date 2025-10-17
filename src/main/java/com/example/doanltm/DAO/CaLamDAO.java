@@ -12,6 +12,58 @@ import java.util.List;
 public class CaLamDAO {
 
     /**
+     * Thêm ca làm mới
+     */
+    public boolean insertCaLam(CaLam c) {
+        String sql = "INSERT INTO calam (gio_batdau, gio_ketthuc, mo_ta, so_luong_toi_da) VALUES (?, ?, ?, ?)";
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTime(1, c.getGioBatdau());
+            ps.setTime(2, c.getGioKetthuc());
+            ps.setString(3, c.getMoTa());
+            ps.setInt(4, c.getSoLuongToiDa());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi thêm ca làm: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Cập nhật ca làm
+     */
+    public boolean updateCaLam(CaLam c) {
+        String sql = "UPDATE calam SET gio_batdau = ?, gio_ketthuc = ?, mo_ta = ?, so_luong_toi_da = ? WHERE ma_calam = ?";
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTime(1, c.getGioBatdau());
+            ps.setTime(2, c.getGioKetthuc());
+            ps.setString(3, c.getMoTa());
+            ps.setInt(4, c.getSoLuongToiDa());
+            ps.setInt(5, c.getMaCalam());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi cập nhật ca làm: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Xóa ca làm
+     */
+    public boolean deleteCaLam(int maCalam) {
+        String sql = "DELETE FROM calam WHERE ma_calam = ?";
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, maCalam);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi xóa ca làm: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Lấy tất cả ca làm
      */
     public List<CaLam> getAllCaLam() {

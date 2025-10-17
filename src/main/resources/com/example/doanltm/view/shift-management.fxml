@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.doanltm.Controller.ShiftManagementController"
+            prefWidth="1000.0" prefHeight="680.0" stylesheets="@../styles/admin.css">
+    <top>
+        <HBox spacing="10" styleClass="control-bar" alignment="CENTER_LEFT">
+            <Label text="Quản lý ca làm" styleClass="card-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <TextField fx:id="searchField" promptText="Tìm kiếm mô tả/giờ..."/>
+            <Button text="Làm mới" onAction="#handleRefresh" styleClass="outline-btn"/>
+            <Button text="➕ Thêm" onAction="#handleAdd" styleClass="primary-btn"/>
+            <Button text="✎ Sửa" onAction="#handleEdit"/>
+            <Button text="🗑️ Xóa" onAction="#handleDelete" styleClass="danger-btn"/>
+        </HBox>
+    </top>
+    <center>
+        <VBox spacing="10">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+            <TableView fx:id="table" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colId" text="Mã" prefWidth="60"/>
+                    <TableColumn fx:id="colMoTa" text="Mô tả" prefWidth="220"/>
+                    <TableColumn fx:id="colGioBD" text="Giờ BĐ" prefWidth="120"/>
+                    <TableColumn fx:id="colGioKT" text="Giờ KT" prefWidth="120"/>
+                    <TableColumn fx:id="colMax" text="Tối đa" prefWidth="80"/>
+                    <TableColumn fx:id="colDaDK" text="Đã ĐK (hôm nay)" prefWidth="140"/>
+                </columns>
+                <columnResizePolicy>
+                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                </columnResizePolicy>
+            </TableView>
+        </VBox>
+    </center>
+</BorderPane>

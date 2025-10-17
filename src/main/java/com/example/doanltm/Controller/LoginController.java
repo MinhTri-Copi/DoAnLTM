@@ -162,13 +162,29 @@ public class LoginController {
     }
     
     private void showAdminDashboard(User user) throws IOException {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Admin");
-        alert.setHeaderText(null);
-        alert.setContentText("Chào Admin " + user.getHoTen() + "!\nTrang admin đang phát triển...");
-        alert.showAndWait();
-        
-        showUserDashboard(user);
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/doanltm/view/admin-dashboard.fxml"));
+        Scene scene = new Scene(loader.load());
+
+        AdminDashboardController controller = loader.getController();
+        controller.setCurrentUser(user);
+
+        Stage stage = (Stage) loginButton.getScene().getWindow();
+        stage.setScene(scene);
+        stage.setTitle("Admin Panel - Hệ thống quản lí làm việc");
+        stage.setMaximized(true);
+    }
+
+    @FXML
+    private void handleOpenRegister() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/doanltm/view/register-view.fxml"));
+            Scene scene = new Scene(loader.load());
+            Stage stage = (Stage) loginButton.getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Đăng ký tài khoản");
+        } catch (IOException e) {
+            showError("Không thể mở trang đăng ký: " + e.getMessage());
+        }
     }
     
     private void showError(String message) {

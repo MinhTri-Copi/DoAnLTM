@@ -331,8 +331,7 @@ public class UserDashboardController {
                         setGraphic(null);
                     } else {
                         DangKy dangKy = getTableView().getItems().get(getIndex());
-                        if (dangKy.getTrangthai() == DangKy.TrangThai.CHO_DUYET ||
-                                dangKy.getNgayLam().isAfter(LocalDate.now())) {
+                        if (dangKy.getTrangthai() == DangKy.TrangThai.CHO_DUYET) {
                             setGraphic(huyButton);
                         } else {
                             setGraphic(null);

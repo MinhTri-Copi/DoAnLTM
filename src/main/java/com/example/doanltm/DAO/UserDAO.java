@@ -11,6 +11,81 @@ import java.sql.SQLException;
 public class UserDAO {
     
     /**
+     * Lấy tất cả người dùng (kèm vai trò)
+     */
+    public java.util.List<User> getAllUsers() {
+        String sql = "SELECT n.ma_nguoidung, n.email, n.ho_ten, n.ma_vaitro, v.ten_vaitro FROM nguoidung n INNER JOIN vaitro v ON n.ma_vaitro = v.ma_vaitro ORDER BY n.ma_nguoidung DESC";
+        java.util.List<User> list = new java.util.ArrayList<>();
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                User u = new User();
+                u.setMaNguoidung(rs.getInt("ma_nguoidung"));
+                u.setEmail(rs.getString("email"));
+                u.setHoTen(rs.getString("ho_ten"));
+                u.setMaVaitro(rs.getInt("ma_vaitro"));
+                u.setTenVaitro(rs.getString("ten_vaitro"));
+                list.add(u);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi getAllUsers: " + e.getMessage());
+        }
+        return list;
+    }
+
+    /**
+     * Thêm người dùng mới
+     */
+    public boolean insertUser(User u) {
+        String sql = "INSERT INTO nguoidung (email, mat_khau, ho_ten, ma_vaitro) VALUES (?, ?, ?, ?)";
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, u.getEmail());
+            ps.setString(2, u.getMatKhau());
+            ps.setString(3, u.getHoTen());
+            ps.setInt(4, u.getMaVaitro());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi insertUser: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Cập nhật người dùng (không bắt buộc đổi mật khẩu)
+     */
+    public boolean updateUser(User u) {
+        String sql = "UPDATE nguoidung SET email = ?, ho_ten = ?, ma_vaitro = ? WHERE ma_nguoidung = ?";
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, u.getEmail());
+            ps.setString(2, u.getHoTen());
+            ps.setInt(3, u.getMaVaitro());
+            ps.setInt(4, u.getMaNguoidung());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi updateUser: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Xóa người dùng
+     */
+    public boolean deleteUser(int maNguoidung) {
+        String sql = "DELETE FROM nguoidung WHERE ma_nguoidung = ?";
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, maNguoidung);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi deleteUser: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Xác thực người dùng với email và mật khẩu
      */
     public User authenticate(String email, String matKhau) {

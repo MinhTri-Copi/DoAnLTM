@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.doanltm.Controller.ScheduleManagementController"
+            prefWidth="1100.0" prefHeight="760.0"
+            stylesheets="@../styles/admin.css">
+    <top>
+        <HBox spacing="12" styleClass="admin-header" alignment="CENTER_LEFT">
+            <Label text="📅" styleClass="logo"/>
+            <VBox spacing="2">
+                <Label text="Quản lí lịch làm việc" styleClass="header-title"/>
+                <Label text="Xem toàn bộ lịch đăng ký của người dùng" styleClass="header-subtitle"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <HBox spacing="8">
+                <Button text="Làm mới" onAction="#handleReloadPage" styleClass="reload-btn"/>
+                <Button text="Đóng" onAction="#handleCloseWindow"/>
+            </HBox>
+        </HBox>
+    </top>
+
+    <center>
+        <VBox spacing="16" styleClass="content">
+            <!-- Filters -->
+            <HBox spacing="10" alignment="CENTER_LEFT" styleClass="filter-bar">
+                <TextField fx:id="searchField" promptText="Tìm theo tên người dùng / mô tả ca" onKeyReleased="#handleApplyFilters"/>
+                <DatePicker fx:id="dateFilterPicker" promptText="Lọc theo ngày" onAction="#handleApplyFilters"/>
+                <ComboBox fx:id="statusFilterCombo" promptText="Trạng thái" onAction="#handleApplyFilters"/>
+                <ComboBox fx:id="typeFilterCombo" promptText="Loại ca" onAction="#handleApplyFilters"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="Áp dụng" onAction="#handleApplyFilters" styleClass="primary-btn"/>
+                <Button text="Xóa lọc" onAction="#handleClearFilters" styleClass="danger-btn"/>
+            </HBox>
+
+            <!-- Table -->
+            <VBox styleClass="card" VBox.vgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="card-header-line">
+                    <Label text="Danh sách lịch đăng ký" styleClass="card-title"/>
+                </HBox>
+                <TableView fx:id="table" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colNguoiDung" text="Người dùng" prefWidth="180"/>
+                        <TableColumn fx:id="colNgay" text="Ngày làm" prefWidth="110"/>
+                        <TableColumn fx:id="colLoaiCa" text="Loại ca" prefWidth="120"/>
+                        <TableColumn fx:id="colMoTa" text="Mô tả/Khung giờ" prefWidth="260"/>
+                        <TableColumn fx:id="colGioBD" text="Giờ bắt đầu" prefWidth="120"/>
+                        <TableColumn fx:id="colGioKT" text="Giờ kết thúc" prefWidth="120"/>
+                        <TableColumn fx:id="colThoiGianDangKy" text="Thời gian đăng ký" prefWidth="160"/>
+                        <TableColumn fx:id="colTrangThai" text="Trạng thái" prefWidth="120"/>
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                    </columnResizePolicy>
+                </TableView>
+            </VBox>
+        </VBox>
+    </center>
+</BorderPane>

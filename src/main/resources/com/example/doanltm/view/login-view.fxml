@@ -98,6 +98,12 @@
                 </font>
             </Button>
             
+            <!-- Register Link -->
+            <HBox spacing="6.0" alignment="CENTER">
+                <Label text="Chưa có tài khoản?" style="-fx-text-fill: #555;" />
+                <Hyperlink text="Đăng ký" onAction="#handleOpenRegister" />
+            </HBox>
+
             <!-- Server Status -->
             <HBox spacing="10.0" alignment="CENTER">
                 <Label text="Trạng thái server:" style="-fx-text-fill: #555;">
