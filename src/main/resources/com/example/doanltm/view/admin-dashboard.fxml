@@ -61,101 +61,167 @@
             </Button>
         </VBox>
         
-        <!-- Content -->
+        <!-- Dynamic Content Container -->
         <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" styleClass="main-scroll">
-            <VBox styleClass="content" spacing="24">
-
-                <!-- Thống kê tổng quan -->
-                <VBox spacing="16">
-                    <Label text="Thống Kê Tổng Quan" styleClass="section-title"/>
-                    <HBox spacing="20" alignment="CENTER_LEFT">
-                        <VBox styleClass="modern-stat-card stat-primary" HBox.hgrow="ALWAYS">
-                            <HBox alignment="CENTER_LEFT" spacing="12">
-                                <VBox styleClass="stat-icon-container stat-icon-blue">
-                                    <Label text="T" styleClass="stat-icon"/>
-                                </VBox>
-                                <VBox spacing="4">
-                                    <Label text="Tổng Ca Làm" styleClass="stat-card-title"/>
-                                    <Label fx:id="monthlyTotalLabel" styleClass="stat-card-value" text="0"/>
-                                </VBox>
-                            </HBox>
-                            <Label text="Trong Tháng" styleClass="stat-card-subtitle"/>
-                        </VBox>
-                        
-                        <VBox styleClass="modern-stat-card stat-success" HBox.hgrow="ALWAYS">
-                            <HBox alignment="CENTER_LEFT" spacing="12">
-                                <VBox styleClass="stat-icon-container stat-icon-green">
-                                    <Label text="↗" styleClass="stat-icon"/>
-                                </VBox>
-                                <VBox spacing="4">
-                                    <Label text="Ngày Cao Nhất" styleClass="stat-card-title"/>
-                                    <Label fx:id="highestDayLabel" styleClass="stat-card-value" text="Chưa có"/>
-                                </VBox>
-                            </HBox>
-                            <Label text="Đăng Ký Nhiều Nhất" styleClass="stat-card-subtitle"/>
-                        </VBox>
-                        
-                        <VBox styleClass="modern-stat-card stat-warning" HBox.hgrow="ALWAYS">
-                            <HBox alignment="CENTER_LEFT" spacing="12">
-                                <VBox styleClass="stat-icon-container stat-icon-orange">
-                                    <Label text="↘" styleClass="stat-icon"/>
-                                </VBox>
-                                <VBox spacing="4">
-                                    <Label text="Ngày Thấp Nhất" styleClass="stat-card-title"/>
-                                    <Label fx:id="lowestDayLabel" styleClass="stat-card-value" text="Chưa có"/>
-                                </VBox>
-                            </HBox>
-                            <Label text="Đăng Ký Ít Nhất" styleClass="stat-card-subtitle"/>
-                        </VBox>
-                    </HBox>
+            <StackPane fx:id="contentContainer" styleClass="content-container">
+                
+                <!-- Overview Content (Default) -->
+                <VBox fx:id="overviewContent" styleClass="content" spacing="24">
+                    <!-- Thống kê tổng quan -->
+                    <VBox spacing="16">
+                        <Label text="Thống Kê Tổng Quan" styleClass="section-title"/>
+                        <HBox spacing="20" alignment="CENTER_LEFT">
+                            <VBox styleClass="modern-stat-card stat-primary" HBox.hgrow="ALWAYS">
+                                <HBox alignment="CENTER_LEFT" spacing="12">
+                                    <VBox styleClass="stat-icon-container stat-icon-blue">
+                                        <Label text="T" styleClass="stat-icon"/>
+                                    </VBox>
+                                    <VBox spacing="4">
+                                        <Label text="Tổng Ca Làm" styleClass="stat-card-title"/>
+                                        <Label fx:id="monthlyTotalLabel" styleClass="stat-card-value" text="0"/>
+                                    </VBox>
+                                </HBox>
+                                <Label text="Trong Tháng" styleClass="stat-card-subtitle"/>
+                            </VBox>
+                            
+                            <VBox styleClass="modern-stat-card stat-success" HBox.hgrow="ALWAYS">
+                                <HBox alignment="CENTER_LEFT" spacing="12">
+                                    <VBox styleClass="stat-icon-container stat-icon-green">
+                                        <Label text="↗" styleClass="stat-icon"/>
+                                    </VBox>
+                                    <VBox spacing="4">
+                                        <Label text="Ngày Cao Nhất" styleClass="stat-card-title"/>
+                                        <Label fx:id="highestDayLabel" styleClass="stat-card-value" text="Chưa có"/>
+                                    </VBox>
+                                </HBox>
+                                <Label text="Đăng Ký Nhiều Nhất" styleClass="stat-card-subtitle"/>
+                            </VBox>
+                            
+                            <VBox styleClass="modern-stat-card stat-warning" HBox.hgrow="ALWAYS">
+                                <HBox alignment="CENTER_LEFT" spacing="12">
+                                    <VBox styleClass="stat-icon-container stat-icon-orange">
+                                        <Label text="↘" styleClass="stat-icon"/>
+                                    </VBox>
+                                    <VBox spacing="4">
+                                        <Label text="Ngày Thấp Nhất" styleClass="stat-card-title"/>
+                                        <Label fx:id="lowestDayLabel" styleClass="stat-card-value" text="Chưa có"/>
+                                    </VBox>
+                                </HBox>
+                                <Label text="Đăng Ký Ít Nhất" styleClass="stat-card-subtitle"/>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+        
+                    <!-- Bộ lọc và tìm kiếm -->
+                    <VBox spacing="16">
+                        <Label text="Bộ Lọc &amp; Tìm Kiếm" styleClass="section-title"/>
+                        <HBox styleClass="modern-filter-bar" spacing="16" alignment="CENTER_LEFT">
+                            <VBox spacing="6">
+                                <Label text="Lọc theo ca làm" styleClass="filter-label"/>
+                                <ComboBox fx:id="caFilterCombo" promptText="Chọn loại ca" styleClass="modern-combo"/>
+                            </VBox>
+                            <VBox spacing="6">
+                                <Label text="Lọc theo ngày" styleClass="filter-label"/>
+                                <DatePicker fx:id="ngayFilterPicker" promptText="Chọn ngày" styleClass="modern-date-picker"/>
+                            </VBox>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <VBox spacing="8" alignment="BOTTOM_RIGHT">
+                                <HBox spacing="10">
+                                    <Button text="Áp dụng" onAction="#handleApplyFilters" styleClass="modern-primary-btn"/>
+                                    <Button text="Xóa lọc" onAction="#handleClearFilters" styleClass="modern-secondary-btn"/>
+                                </HBox>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+        
+                    <!-- Bảng dữ liệu -->
+                    <VBox styleClass="modern-table-container" VBox.vgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="table-header-section">
+                            <Label text="Danh Sách Đăng Ký Ca Làm" styleClass="section-title"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label text="Tổng số bản ghi: " styleClass="table-info"/>
+                            <Label text="0" styleClass="table-count"/>
+                        </HBox>
+                        <TableView fx:id="regTable" VBox.vgrow="ALWAYS" prefHeight="480.0" styleClass="modern-table">
+                            <columns>
+                                <TableColumn fx:id="colNguoiDung" text="Nhân viên" prefWidth="160" styleClass="modern-column"/>
+                                <TableColumn fx:id="colNgay" text="Ngày" prefWidth="120" styleClass="modern-column"/>
+                                <TableColumn fx:id="colMoTa" text="Mô tả ca làm" prefWidth="220" styleClass="modern-column"/>
+                                <TableColumn fx:id="colLoaiCa" text="Loại ca" prefWidth="100" styleClass="modern-column"/>
+                                <TableColumn fx:id="colTrangThai" text="Trạng thái" prefWidth="110" styleClass="modern-column"/>
+                                <TableColumn fx:id="colActions" text="Thao tác" prefWidth="250" styleClass="modern-column"/>
+                            </columns>
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                        </TableView>
+                    </VBox>
                 </VBox>
-
-                <!-- Bộ lọc và tìm kiếm -->
-                <VBox spacing="16">
-                    <Label text="Bộ Lọc &amp; Tìm Kiếm" styleClass="section-title"/>
-                    <HBox styleClass="modern-filter-bar" spacing="16" alignment="CENTER_LEFT">
-                        <VBox spacing="6">
-                            <Label text="Lọc theo ca làm" styleClass="filter-label"/>
-                            <ComboBox fx:id="caFilterCombo" promptText="Chọn loại ca" styleClass="modern-combo"/>
-                        </VBox>
-                        <VBox spacing="6">
-                            <Label text="Lọc theo ngày" styleClass="filter-label"/>
-                            <DatePicker fx:id="ngayFilterPicker" promptText="Chọn ngày" styleClass="modern-date-picker"/>
-                        </VBox>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <VBox spacing="8" alignment="BOTTOM_RIGHT">
-                            <HBox spacing="10">
-                                <Button text="Áp dụng" onAction="#handleApplyFilters" styleClass="modern-primary-btn"/>
-                                <Button text="Xóa lọc" onAction="#handleClearFilters" styleClass="modern-secondary-btn"/>
-                            </HBox>
-                        </VBox>
-                    </HBox>
+                
+                <!-- Shift Management Content (Hidden by default) -->
+                <VBox fx:id="shiftManagementContent" styleClass="content" spacing="24" visible="false">
+                    <VBox spacing="16">
+                        <Label text="Quản Lý Ca Làm Việc" styleClass="section-title"/>
+                        <HBox styleClass="modern-filter-bar" spacing="16" alignment="CENTER_LEFT">
+                            <Button text="Thêm Ca Mới" styleClass="modern-primary-btn"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <TextField promptText="Tìm kiếm ca làm..." styleClass="modern-combo" prefWidth="200"/>
+                        </HBox>
+                    </VBox>
+                    
+                    <VBox styleClass="modern-table-container" VBox.vgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="table-header-section">
+                            <Label text="Danh Sách Ca Làm" styleClass="section-title"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label text="Tổng ca: 0" styleClass="table-count"/>
+                        </HBox>
+                        <Label text="Giao diện quản lý ca làm sẽ được phát triển ở đây" styleClass="section-title" alignment="CENTER" VBox.vgrow="ALWAYS"/>
+                    </VBox>
                 </VBox>
-
-                <!-- Bảng dữ liệu -->
-                <VBox styleClass="modern-table-container" VBox.vgrow="ALWAYS">
-                    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="table-header-section">
-                        <Label text="Danh Sách Đăng Ký Ca Làm" styleClass="section-title"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="Tổng số bản ghi: " styleClass="table-info"/>
-                        <Label text="0" styleClass="table-count"/>
-                    </HBox>
-                    <TableView fx:id="regTable" VBox.vgrow="ALWAYS" prefHeight="480.0" styleClass="modern-table">
-                        <columns>
-                            <TableColumn fx:id="colNguoiDung" text="Nhân viên" prefWidth="160" styleClass="modern-column"/>
-                            <TableColumn fx:id="colNgay" text="Ngày" prefWidth="120" styleClass="modern-column"/>
-                            <TableColumn fx:id="colMoTa" text="Mô tả ca làm" prefWidth="220" styleClass="modern-column"/>
-                            <TableColumn fx:id="colLoaiCa" text="Loại ca" prefWidth="100" styleClass="modern-column"/>
-                            <TableColumn fx:id="colTrangThai" text="Trạng thái" prefWidth="110" styleClass="modern-column"/>
-                            <TableColumn fx:id="colActions" text="Thao tác" prefWidth="250" styleClass="modern-column"/>
-                        </columns>
-                        <columnResizePolicy>
-                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
-                        </columnResizePolicy>
-                    </TableView>
+                
+                <!-- User Management Content (Hidden by default) -->
+                <VBox fx:id="userManagementContent" styleClass="content" spacing="24" visible="false">
+                    <VBox spacing="16">
+                        <Label text="Quản Lý Người Dùng" styleClass="section-title"/>
+                        <HBox styleClass="modern-filter-bar" spacing="16" alignment="CENTER_LEFT">
+                            <Button text="Thêm Người Dùng" styleClass="modern-primary-btn"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <TextField promptText="Tìm kiếm người dùng..." styleClass="modern-combo" prefWidth="200"/>
+                        </HBox>
+                    </VBox>
+                    
+                    <VBox styleClass="modern-table-container" VBox.vgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="table-header-section">
+                            <Label text="Danh Sách Người Dùng" styleClass="section-title"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label text="Tổng người dùng: 0" styleClass="table-count"/>
+                        </HBox>
+                        <Label text="Giao diện quản lý người dùng sẽ được phát triển ở đây" styleClass="section-title" alignment="CENTER" VBox.vgrow="ALWAYS"/>
+                    </VBox>
                 </VBox>
-
-            </VBox>
+                
+                <!-- Schedule Management Content (Hidden by default) -->
+                <VBox fx:id="scheduleManagementContent" styleClass="content" spacing="24" visible="false">
+                    <VBox spacing="16">
+                        <Label text="Quản Lý Lịch Trình" styleClass="section-title"/>
+                        <HBox styleClass="modern-filter-bar" spacing="16" alignment="CENTER_LEFT">
+                            <Button text="Tạo Lịch Mới" styleClass="modern-primary-btn"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <DatePicker promptText="Chọn ngày" styleClass="modern-date-picker"/>
+                        </HBox>
+                    </VBox>
+                    
+                    <VBox styleClass="modern-table-container" VBox.vgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="table-header-section">
+                            <Label text="Lịch Trình Tháng" styleClass="section-title"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label text="Tháng hiện tại" styleClass="table-count"/>
+                        </HBox>
+                        <Label text="Giao diện quản lý lịch trình sẽ được phát triển ở đây" styleClass="section-title" alignment="CENTER" VBox.vgrow="ALWAYS"/>
+                    </VBox>
+                </VBox>
+                
+            </StackPane>
         </ScrollPane>
     </SplitPane>
 </VBox>

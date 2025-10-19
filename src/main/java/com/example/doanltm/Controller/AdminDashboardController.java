@@ -15,6 +15,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -48,8 +49,18 @@ public class AdminDashboardController {
     @FXML private TableColumn<DangKy, String> colTrangThai;
     @FXML private TableColumn<DangKy, Void> colActions;
 
-    // Center content switching (optional)
-    @FXML private StackPane contentStack;
+    // Dynamic content container and content panes
+    @FXML private StackPane contentContainer;
+    @FXML private VBox overviewContent;
+    @FXML private VBox shiftManagementContent;
+    @FXML private VBox userManagementContent;
+    @FXML private VBox scheduleManagementContent;
+    
+    // Sidebar buttons
+    @FXML private Button overviewBtn;
+    @FXML private Button shiftMgmtBtn;
+    @FXML private Button userMgmtBtn;
+    @FXML private Button scheduleMgmtBtn;
 
     private final CaLamDAO caLamDAO = new CaLamDAO();
     private final AdminReportDAO reportDAO = new AdminReportDAO();
@@ -97,7 +108,7 @@ public class AdminDashboardController {
                 try {
                     FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/doanltm/view/login-view.fxml"));
                     Scene scene = new Scene(loader.load());
-                    Stage stage = (Stage) (titleLabel != null ? titleLabel.getScene().getWindow() : contentStack.getScene().getWindow());
+                    Stage stage = (Stage) (titleLabel != null ? titleLabel.getScene().getWindow() : contentContainer.getScene().getWindow());
                     stage.setScene(scene);
                     stage.setTitle("Đăng Nhập");
                 } catch (IOException e) {
@@ -266,34 +277,69 @@ public class AdminDashboardController {
         refreshRegistrations();
     }
 
-    // Sidebar handlers (placeholders)
-    @FXML private void showOverview() { /* content is already overview */ }
-    private void openWindow(String fxml, String title) {
-        try {
-            java.net.URL url = getClass().getResource(fxml);
-            if (url == null) { showInfo("Không tìm thấy tài nguyên: " + fxml); return; }
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(url);
-            javafx.scene.Scene scene = new javafx.scene.Scene(loader.load());
-            javafx.stage.Stage stage = new javafx.stage.Stage();
-            stage.setTitle(title);
-            stage.setScene(scene);
-            // lấy owner nếu có
-            javafx.stage.Window owner = titleLabel != null ? titleLabel.getScene().getWindow() : null;
-            if (owner != null) stage.initOwner(owner);
-            stage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-            String msg = e.getClass().getSimpleName() + ": " + (e.getMessage()==null?"" : e.getMessage());
-            Alert a = new Alert(Alert.AlertType.ERROR, "Không mở được cửa sổ: " + title + "\n" + msg, ButtonType.OK);
-            a.setHeaderText(null);
-            a.setTitle("Lỗi");
-            a.showAndWait();
+    // Dynamic content switching methods
+    @FXML private void showOverview() {
+        switchToContent(overviewContent);
+        updateSidebarActiveState(overviewBtn);
+    }
+    
+    @FXML private void showShiftManagement() {
+        switchToContent(shiftManagementContent);
+        updateSidebarActiveState(shiftMgmtBtn);
+    }
+    
+    @FXML private void showUserManagement() {
+        switchToContent(userManagementContent);
+        updateSidebarActiveState(userMgmtBtn);
+    }
+    
+    @FXML private void showScheduleManagement() {
+        switchToContent(scheduleManagementContent);
+        updateSidebarActiveState(scheduleMgmtBtn);
+    }
+    
+    private void switchToContent(VBox targetContent) {
+        if (contentContainer == null || targetContent == null) return;
+        
+        // Hide all content panes
+        hideAllContent();
+        
+        // Show the target content
+        targetContent.setVisible(true);
+        targetContent.setManaged(true);
+    }
+    
+    private void hideAllContent() {
+        if (overviewContent != null) {
+            overviewContent.setVisible(false);
+            overviewContent.setManaged(false);
+        }
+        if (shiftManagementContent != null) {
+            shiftManagementContent.setVisible(false);
+            shiftManagementContent.setManaged(false);
+        }
+        if (userManagementContent != null) {
+            userManagementContent.setVisible(false);
+            userManagementContent.setManaged(false);
+        }
+        if (scheduleManagementContent != null) {
+            scheduleManagementContent.setVisible(false);
+            scheduleManagementContent.setManaged(false);
         }
     }
-
-    @FXML private void showShiftManagement() { openWindow("/com/example/doanltm/view/shift-management.fxml", "Quản lý ca làm"); }
-    @FXML private void showUserManagement() { openWindow("/com/example/doanltm/view/user-management.fxml", "Quản lý người dùng"); }
-    @FXML private void showScheduleManagement() { openWindow("/com/example/doanltm/view/schedule-management.fxml", "Quản lí lịch làm việc"); }
+    
+    private void updateSidebarActiveState(Button activeButton) {
+        // Remove active state from all buttons
+        if (overviewBtn != null) overviewBtn.getStyleClass().remove("sidebar-active");
+        if (shiftMgmtBtn != null) shiftMgmtBtn.getStyleClass().remove("sidebar-active");
+        if (userMgmtBtn != null) userMgmtBtn.getStyleClass().remove("sidebar-active");
+        if (scheduleMgmtBtn != null) scheduleMgmtBtn.getStyleClass().remove("sidebar-active");
+        
+        // Add active state to the clicked button
+        if (activeButton != null && !activeButton.getStyleClass().contains("sidebar-active")) {
+            activeButton.getStyleClass().add("sidebar-active");
+        }
+    }
 
     private void showInfo(String msg) {
         Alert a = new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK);
