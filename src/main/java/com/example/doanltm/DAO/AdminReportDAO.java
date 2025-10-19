@@ -12,14 +12,21 @@ public class AdminReportDAO {
 
     public int getMonthlyTotal(LocalDate anyDateInMonth) {
         String sql = "SELECT COUNT(*) FROM dangkycalam WHERE YEAR(ngay_lam)=? AND MONTH(ngay_lam)=? AND trangthai != 'từ chối'";
+        System.out.println("🔍 Query Monthly Total - Year: " + anyDateInMonth.getYear() + ", Month: " + anyDateInMonth.getMonthValue());
         try (Connection conn = BDConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, anyDateInMonth.getYear());
             ps.setInt(2, anyDateInMonth.getMonthValue());
+            System.out.println("🔍 SQL: " + sql);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next()) {
+                    int result = rs.getInt(1);
+                    System.out.println("✅ Monthly Total Result: " + result);
+                    return result;
+                }
             }
         } catch (SQLException e) {
+            System.err.println("❌ Error in getMonthlyTotal: " + e.getMessage());
             e.printStackTrace();
         }
         return 0;
@@ -62,6 +69,46 @@ public class AdminReportDAO {
         }
         return null;
     }
+    
+    /**
+     * Đếm số ca bình thường trong tháng (có ma_calam)
+     */
+    public int getNormalShiftsCount(LocalDate anyDateInMonth) {
+        String sql = "SELECT COUNT(*) FROM dangkycalam " +
+                "WHERE YEAR(ngay_lam)=? AND MONTH(ngay_lam)=? " +
+                "AND ma_calam IS NOT NULL AND trangthai != 'từ chối'";
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, anyDateInMonth.getYear());
+            ps.setInt(2, anyDateInMonth.getMonthValue());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    
+    /**
+     * Đếm số ca gãy trong tháng (không có ma_calam)
+     */
+    public int getBrokenShiftsCount(LocalDate anyDateInMonth) {
+        String sql = "SELECT COUNT(*) FROM dangkycalam " +
+                "WHERE YEAR(ngay_lam)=? AND MONTH(ngay_lam)=? " +
+                "AND ma_calam IS NULL AND trangthai != 'từ chối'";
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, anyDateInMonth.getYear());
+            ps.setInt(2, anyDateInMonth.getMonthValue());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 
     public List<DangKy> getRegistrations(Integer maCalamFilter, LocalDate ngayFilter) {
         List<DangKy> list = new ArrayList<>();
@@ -74,6 +121,9 @@ public class AdminReportDAO {
         if (maCalamFilter != null) sql.append("AND d.ma_calam = ? ");
         if (ngayFilter != null) sql.append("AND d.ngay_lam = ? ");
         sql.append("ORDER BY d.ngay_lam DESC, COALESCE(d.gbd_cagay, c.gio_batdau) ASC");
+        
+        System.out.println("🔍 Query Registrations - Filter: ca=" + maCalamFilter + ", ngay=" + ngayFilter);
+        System.out.println("🔍 SQL: " + sql.toString());
 
         try (Connection conn = BDConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
@@ -81,7 +131,9 @@ public class AdminReportDAO {
             if (maCalamFilter != null) ps.setInt(idx++, maCalamFilter);
             if (ngayFilter != null) ps.setDate(idx++, Date.valueOf(ngayFilter));
             try (ResultSet rs = ps.executeQuery()) {
+                int count = 0;
                 while (rs.next()) {
+                    count++;
                     DangKy d = new DangKy();
                     d.setMaDangky(rs.getInt("ma_dangky"));
                     d.setMaNguoidung(rs.getInt("ma_nguoidung"));
@@ -90,11 +142,13 @@ public class AdminReportDAO {
                     if (!rs.wasNull()) {
                         d.setMaCalam(maCalam);
                         d.setMoTaCaLam(rs.getString("mo_ta"));
+                        d.setLoaiCa("Ca Bình Thường");
                         d.setGbdCagay(rs.getTime("gio_batdau"));
                         d.setGktCagay(rs.getTime("gio_ketthuc"));
                     } else {
                         d.setMaCalam(null);
                         d.setMoTaCaLam("Ca gãy");
+                        d.setLoaiCa("Ca Gãy");
                         d.setGbdCagay(rs.getTime("gbd_cagay"));
                         d.setGktCagay(rs.getTime("gkt_cagay"));
                     }
@@ -103,10 +157,13 @@ public class AdminReportDAO {
                     d.setTrangthai(DangKy.TrangThai.fromString(rs.getString("trangthai")));
                     list.add(d);
                 }
+                System.out.println("✅ Found " + count + " registrations");
             }
         } catch (SQLException e) {
+            System.err.println("❌ Error in getRegistrations: " + e.getMessage());
             e.printStackTrace();
         }
+        System.out.println("✅ Returning " + list.size() + " registrations");
         return list;
     }
 

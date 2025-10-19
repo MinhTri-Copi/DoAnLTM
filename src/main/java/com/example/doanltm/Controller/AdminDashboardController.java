@@ -1,11 +1,12 @@
 package com.example.doanltm.Controller;
 
-import com.example.doanltm.DAO.AdminReportDAO;
 import com.example.doanltm.DAO.CaLamDAO;
 import com.example.doanltm.Model.CaLam;
 import com.example.doanltm.Model.DangKy;
 import com.example.doanltm.Model.User;
-import com.example.doanltm.DAO.DangKyDAO;
+import com.example.doanltm.Service.TCPClientService;
+import com.example.doanltm.Request.*;
+import com.example.doanltm.Response.*;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -37,8 +38,8 @@ public class AdminDashboardController {
 
     // Stats labels
     @FXML private Label monthlyTotalLabel;
-    @FXML private Label highestDayLabel;
-    @FXML private Label lowestDayLabel;
+    @FXML private Label normalShiftLabel;
+    @FXML private Label brokenShiftLabel;
 
     // Registrations table
     @FXML private TableView<DangKy> regTable;
@@ -63,15 +64,23 @@ public class AdminDashboardController {
     @FXML private Button scheduleMgmtBtn;
 
     private final CaLamDAO caLamDAO = new CaLamDAO();
-    private final AdminReportDAO reportDAO = new AdminReportDAO();
+    private final TCPClientService tcpClient = new TCPClientService();
     private final ObservableList<DangKy> registrations = FXCollections.observableArrayList();
-    private final DangKyDAO dangKyDAO = new DangKyDAO();
 
     private User currentUser;
 
     @FXML
     public void initialize() {
-        if (titleLabel != null) titleLabel.setText("Hệ thống quản lí làm việc");
+        if (titleLabel != null) titleLabel.setText("Hệ thống quản lý làm việc");
+        
+        // Kết nối TCP
+        if (!tcpClient.connect()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Không thể kết nối đến server!", ButtonType.OK);
+            alert.setHeaderText(null);
+            alert.setTitle("Lỗi kết nối");
+            alert.showAndWait();
+        }
+        
         // Defer access check to allow LoginController to set currentUser
         Platform.runLater(this::verifyAccessOrRedirect);
 
@@ -167,8 +176,11 @@ public class AdminDashboardController {
                 }
                 private void updateStatus(DangKy.TrangThai st) {
                     DangKy item = getTableView().getItems().get(getIndex());
-                    boolean ok = dangKyDAO.updateTrangThai(item.getMaDangky(), st);
-                    if (ok) {
+                    
+                    CapNhatTrangThaiRequest request = new CapNhatTrangThaiRequest(item.getMaDangky(), st);
+                    CapNhatTrangThaiResponse response = tcpClient.capNhatTrangThai(request);
+                    
+                    if (response.isSuccess()) {
                         item.setTrangthai(st);
                         // Ẩn bộ nút ngay khi đã xử lý
                         box.setVisible(false);
@@ -176,12 +188,12 @@ public class AdminDashboardController {
                         getTableView().refresh();
                         refreshRegistrations();
                         refreshStats();
-                        Alert a = new Alert(Alert.AlertType.INFORMATION, "Cập nhật trạng thái thành công!", ButtonType.OK);
+                        Alert a = new Alert(Alert.AlertType.INFORMATION, response.getMessage(), ButtonType.OK);
                         a.setHeaderText(null);
                         a.setTitle("Thành công");
                         a.showAndWait();
                     } else {
-                        Alert a = new Alert(Alert.AlertType.ERROR, "Cập nhật trạng thái thất bại!", ButtonType.OK);
+                        Alert a = new Alert(Alert.AlertType.ERROR, response.getMessage(), ButtonType.OK);
                         a.setHeaderText(null);
                         a.setTitle("Lỗi");
                         a.showAndWait();
@@ -223,36 +235,36 @@ public class AdminDashboardController {
 
     private void refreshStats() {
         LocalDate m = thangThongKePicker != null && thangThongKePicker.getValue() != null ? thangThongKePicker.getValue() : LocalDate.now();
-        int total = reportDAO.getMonthlyTotal(m);
-        AdminReportDAO.DayCount max = reportDAO.getHighestDay(m);
-        AdminReportDAO.DayCount min = reportDAO.getLowestDay(m);
-
-        if (monthlyTotalLabel != null) monthlyTotalLabel.setText(String.valueOf(total));
-        DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MM");
-        if (highestDayLabel != null) highestDayLabel.setText(max != null ? (df.format(max.date) + " (" + max.count + ")") : "N/A");
-        if (lowestDayLabel != null) lowestDayLabel.setText(min != null ? (df.format(min.date) + " (" + min.count + ")") : "N/A");
+        
+        ThongKeAdminRequest request = new ThongKeAdminRequest(m);
+        ThongKeAdminResponse response = tcpClient.getThongKeAdmin(request);
+        
+        if (response.isSuccess()) {
+            if (monthlyTotalLabel != null) monthlyTotalLabel.setText(String.valueOf(response.getMonthlyTotal()));
+            if (normalShiftLabel != null) normalShiftLabel.setText(String.valueOf(response.getNormalShiftsCount()));
+            if (brokenShiftLabel != null) brokenShiftLabel.setText(String.valueOf(response.getBrokenShiftsCount()));
+        } else {
+            System.err.println("Lỗi lấy thống kê: " + response.getMessage());
+        }
     }
 
     private void refreshRegistrations() {
         Integer maCalam = null;
         if (caFilterCombo != null && caFilterCombo.getValue() != null) maCalam = caFilterCombo.getValue().getMaCalam();
         LocalDate ngay = ngayFilterPicker != null ? ngayFilterPicker.getValue() : null;
-        List<DangKy> data = reportDAO.getRegistrations(maCalam, ngay);
-        // Ẩn các ca đã qua ngày hiện tại
-        java.time.LocalDate today = java.time.LocalDate.now();
-        java.util.List<DangKy> filtered = data.stream()
-                .filter(dk -> dk.getNgayLam() != null && !dk.getNgayLam().isBefore(today))
-                .collect(java.util.stream.Collectors.toList());
-        // Sắp xếp: ngày gần nhất trước, sau đó giờ bắt đầu tăng dần
-        java.util.List<DangKy> sorted = filtered.stream()
-                .sorted(java.util.Comparator
-                        .comparing(DangKy::getNgayLam)
-                        .thenComparing(dk -> dk.getGbdCagay(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
-                .collect(java.util.stream.Collectors.toList());
-        Platform.runLater(() -> {
-            registrations.setAll(sorted);
-            if (regTable != null) regTable.refresh();
-        });
+        
+        DanhSachDangKyAdminRequest request = new DanhSachDangKyAdminRequest(maCalam, ngay);
+        DanhSachDangKyAdminResponse response = tcpClient.getDanhSachDangKyAdmin(request);
+        
+        if (response.isSuccess() && response.getRegistrations() != null) {
+            Platform.runLater(() -> {
+                registrations.setAll(response.getRegistrations());
+                if (regTable != null) regTable.refresh();
+            });
+        } else {
+            System.err.println("Lỗi lấy danh sách đăng ký: " + response.getMessage());
+            Platform.runLater(() -> registrations.clear());
+        }
     }
 
     private void reloadCaFilterList() {
@@ -350,6 +362,9 @@ public class AdminDashboardController {
 
     @FXML private void handleLogout() {
         try {
+            // Ngắt kết nối TCP
+            tcpClient.disconnect();
+            
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/com/example/doanltm/view/login-view.fxml"));
             javafx.scene.Scene scene = new javafx.scene.Scene(loader.load());
             javafx.stage.Stage stage = (javafx.stage.Stage) titleLabel.getScene().getWindow();

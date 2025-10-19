@@ -2,10 +2,7 @@ package com.example.doanltm.Service;
 
 import com.example.doanltm.Model.*;
 import com.example.doanltm.Request.*;
-import com.example.doanltm.Response.DangKyResponse;
-import com.example.doanltm.Response.GetCaLamResponse;
-import com.example.doanltm.Response.GetDangKyResponse;
-import com.example.doanltm.Response.HuyDangKyResponse;
+import com.example.doanltm.Response.*;
 
 import java.io.*;
 import java.net.Socket;
@@ -30,6 +27,7 @@ public class TCPClientService {
         
         try {
             socket = new Socket(SERVER_HOST, SERVER_PORT);
+            socket.setSoTimeout(10000); // 10 giây timeout
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
             isConnected = true;
@@ -222,6 +220,100 @@ public class TCPClientService {
             }
         } catch (IOException e) {
             System.err.println("❌ Lỗi khi đóng kết nối: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Lấy thống kê admin
+     */
+    public synchronized ThongKeAdminResponse getThongKeAdmin(ThongKeAdminRequest request) {
+        if (!ensureConnection()) {
+            return new ThongKeAdminResponse(false, "Không thể kết nối đến server!");
+        }
+        
+        try {
+            out.writeObject(request);
+            out.flush();
+            System.out.println("📤 Đã gửi thống kê admin request: " + request);
+            
+            ThongKeAdminResponse response = (ThongKeAdminResponse) in.readObject();
+            System.out.println("📥 Nhận thống kê admin response: " + response.getMessage());
+            
+            return response;
+            
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
+            e.printStackTrace();
+            isConnected = false;
+            
+            // Thử reconnect và gửi lại
+            if (ensureConnection()) {
+                return getThongKeAdmin(request);
+            }
+            return new ThongKeAdminResponse(false, "Lỗi kết nối: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Lấy danh sách đăng ký cho admin
+     */
+    public synchronized DanhSachDangKyAdminResponse getDanhSachDangKyAdmin(DanhSachDangKyAdminRequest request) {
+        if (!ensureConnection()) {
+            return new DanhSachDangKyAdminResponse(false, "Không thể kết nối đến server!");
+        }
+        
+        try {
+            out.writeObject(request);
+            out.flush();
+            System.out.println("📤 Đã gửi danh sách đăng ký admin request: " + request);
+            
+            DanhSachDangKyAdminResponse response = (DanhSachDangKyAdminResponse) in.readObject();
+            System.out.println("📥 Nhận danh sách đăng ký admin response với " + 
+                (response.getRegistrations() != null ? response.getRegistrations().size() : 0) + " đăng ký");
+            
+            return response;
+            
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
+            e.printStackTrace();
+            isConnected = false;
+            
+            // Thử reconnect và gửi lại
+            if (ensureConnection()) {
+                return getDanhSachDangKyAdmin(request);
+            }
+            return new DanhSachDangKyAdminResponse(false, "Lỗi kết nối: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Cập nhật trạng thái đăng ký
+     */
+    public synchronized CapNhatTrangThaiResponse capNhatTrangThai(CapNhatTrangThaiRequest request) {
+        if (!ensureConnection()) {
+            return new CapNhatTrangThaiResponse(false, "Không thể kết nối đến server!");
+        }
+        
+        try {
+            out.writeObject(request);
+            out.flush();
+            System.out.println("📤 Đã gửi cập nhật trạng thái request: " + request);
+            
+            CapNhatTrangThaiResponse response = (CapNhatTrangThaiResponse) in.readObject();
+            System.out.println("📥 Nhận cập nhật trạng thái response: " + response.getMessage());
+            
+            return response;
+            
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
+            e.printStackTrace();
+            isConnected = false;
+            
+            // Thử reconnect và gửi lại
+            if (ensureConnection()) {
+                return capNhatTrangThai(request);
+            }
+            return new CapNhatTrangThaiResponse(false, "Lỗi kết nối: " + e.getMessage());
         }
     }
     

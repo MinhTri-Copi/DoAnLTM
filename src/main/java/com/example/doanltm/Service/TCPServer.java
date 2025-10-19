@@ -5,10 +5,8 @@ import com.example.doanltm.DAO.DangKyDAO;
 import com.example.doanltm.DAO.UserDAO;
 import com.example.doanltm.Model.*;
 import com.example.doanltm.Request.*;
-import com.example.doanltm.Response.DangKyResponse;
-import com.example.doanltm.Response.GetCaLamResponse;
-import com.example.doanltm.Response.GetDangKyResponse;
-import com.example.doanltm.Response.HuyDangKyResponse;
+import com.example.doanltm.Response.*;
+import com.example.doanltm.DAO.AdminReportDAO;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -115,6 +113,7 @@ public class TCPServer {
         private UserDAO userDAO;
         private CaLamDAO caLamDAO;
         private DangKyDAO dangKyDAO;
+        private AdminReportDAO adminReportDAO;
 
         public ClientHandler(Socket socket, TCPServer server) {
             this.clientSocket = socket;
@@ -123,6 +122,7 @@ public class TCPServer {
             this.userDAO = new UserDAO();
             this.caLamDAO = new CaLamDAO();
             this.dangKyDAO = new DangKyDAO();
+            this.adminReportDAO = new AdminReportDAO();
             
             System.out.println("🔍 ClientHandler tạo cho: " + clientId);
         }
@@ -148,6 +148,12 @@ public class TCPServer {
                         handleGetDangKyRequest((GetDangKyRequest) request);
                     } else if (request instanceof HuyDangKyRequest) {
                         handleHuyDangKyRequest((HuyDangKyRequest) request);
+                    } else if (request instanceof ThongKeAdminRequest) {
+                        handleThongKeAdminRequest((ThongKeAdminRequest) request);
+                    } else if (request instanceof DanhSachDangKyAdminRequest) {
+                        handleDanhSachDangKyAdminRequest((DanhSachDangKyAdminRequest) request);
+                    } else if (request instanceof CapNhatTrangThaiRequest) {
+                        handleCapNhatTrangThaiRequest((CapNhatTrangThaiRequest) request);
                     } else {
                         System.out.println("⚠️ Request không xác định: " + request.getClass().getName());
                     }
@@ -348,6 +354,94 @@ public class TCPServer {
                 out.writeObject(response);
                 out.flush();
                 System.out.println("📤 Đã gửi HuyDangKyResponse về client\n");
+
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi gửi response: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        /**
+         * Xử lý thống kê admin request
+         */
+        private void handleThongKeAdminRequest(ThongKeAdminRequest request) {
+            System.out.println("📥 Nhận thống kê admin request: " + request);
+
+            try {
+                int total = adminReportDAO.getMonthlyTotal(request.getMonth());
+                int normalShifts = adminReportDAO.getNormalShiftsCount(request.getMonth());
+                int brokenShifts = adminReportDAO.getBrokenShiftsCount(request.getMonth());
+
+                ThongKeAdminResponse response = new ThongKeAdminResponse(
+                    true, "Lấy thống kê thành công!", total, normalShifts, brokenShifts);
+                
+                System.out.println("✅ Thống kê admin - Tổng: " + total + ", Ca bình thường: " + normalShifts + ", Ca gãy: " + brokenShifts);
+
+                out.writeObject(response);
+                out.flush();
+                System.out.println("📤 Đã gửi ThongKeAdminResponse về client\n");
+
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi gửi response: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        /**
+         * Xử lý danh sách đăng ký admin request
+         */
+        private void handleDanhSachDangKyAdminRequest(DanhSachDangKyAdminRequest request) {
+            System.out.println("📥 Nhận danh sách đăng ký admin request: " + request);
+
+            try {
+                List<DangKy> registrations = adminReportDAO.getRegistrations(
+                    request.getMaCalam(), request.getNgayFilter());
+                
+                // Lọc chỉ lấy các ca chưa qua ngày hiện tại
+                java.time.LocalDate today = java.time.LocalDate.now();
+                List<DangKy> filtered = registrations.stream()
+                        .filter(dk -> dk.getNgayLam() != null && !dk.getNgayLam().isBefore(today))
+                        .sorted(java.util.Comparator
+                                .comparing(DangKy::getNgayLam)
+                                .thenComparing(dk -> dk.getGbdCagay(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                        .collect(java.util.stream.Collectors.toList());
+
+                DanhSachDangKyAdminResponse response = new DanhSachDangKyAdminResponse(
+                    true, "Lấy danh sách đăng ký thành công!", filtered);
+                
+                System.out.println("✅ Tìm thấy " + filtered.size() + " đăng ký");
+
+                out.writeObject(response);
+                out.flush();
+                System.out.println("📤 Đã gửi DanhSachDangKyAdminResponse về client\n");
+
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi gửi response: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        /**
+         * Xử lý cập nhật trạng thái request
+         */
+        private void handleCapNhatTrangThaiRequest(CapNhatTrangThaiRequest request) {
+            System.out.println("📥 Nhận cập nhật trạng thái request: " + request);
+
+            try {
+                boolean success = dangKyDAO.updateTrangThai(request.getMaDangky(), request.getTrangThai());
+
+                CapNhatTrangThaiResponse response;
+                if (success) {
+                    response = new CapNhatTrangThaiResponse(true, "Cập nhật trạng thái thành công!");
+                    System.out.println("✅ Cập nhật trạng thái thành công");
+                } else {
+                    response = new CapNhatTrangThaiResponse(false, "Cập nhật trạng thái thất bại!");
+                    System.out.println("❌ Cập nhật trạng thái thất bại");
+                }
+
+                out.writeObject(response);
+                out.flush();
+                System.out.println("📤 Đã gửi CapNhatTrangThaiResponse về client\n");
 
             } catch (IOException e) {
                 System.err.println("❌ Lỗi khi gửi response: " + e.getMessage());

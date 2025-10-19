@@ -87,27 +87,27 @@
                             <VBox styleClass="modern-stat-card stat-success" HBox.hgrow="ALWAYS">
                                 <HBox alignment="CENTER_LEFT" spacing="12">
                                     <VBox styleClass="stat-icon-container stat-icon-green">
-                                        <Label text="↗" styleClass="stat-icon"/>
+                                        <Label text="🕗" styleClass="stat-icon"/>
                                     </VBox>
                                     <VBox spacing="4">
-                                        <Label text="Ngày Cao Nhất" styleClass="stat-card-title"/>
-                                        <Label fx:id="highestDayLabel" styleClass="stat-card-value" text="Chưa có"/>
+                                        <Label text="Số Ca Bình Thường" styleClass="stat-card-title"/>
+                                        <Label fx:id="normalShiftLabel" styleClass="stat-card-value" text="0"/>
                                     </VBox>
                                 </HBox>
-                                <Label text="Đăng Ký Nhiều Nhất" styleClass="stat-card-subtitle"/>
+                                <Label text="Ca Cố Định" styleClass="stat-card-subtitle"/>
                             </VBox>
                             
                             <VBox styleClass="modern-stat-card stat-warning" HBox.hgrow="ALWAYS">
                                 <HBox alignment="CENTER_LEFT" spacing="12">
                                     <VBox styleClass="stat-icon-container stat-icon-orange">
-                                        <Label text="↘" styleClass="stat-icon"/>
+                                        <Label text="⏰" styleClass="stat-icon"/>
                                     </VBox>
                                     <VBox spacing="4">
-                                        <Label text="Ngày Thấp Nhất" styleClass="stat-card-title"/>
-                                        <Label fx:id="lowestDayLabel" styleClass="stat-card-value" text="Chưa có"/>
+                                        <Label text="Số Ca Gãy" styleClass="stat-card-title"/>
+                                        <Label fx:id="brokenShiftLabel" styleClass="stat-card-value" text="0"/>
                                     </VBox>
                                 </HBox>
-                                <Label text="Đăng Ký Ít Nhất" styleClass="stat-card-subtitle"/>
+                                <Label text="Ca Linh Hoạt" styleClass="stat-card-subtitle"/>
                             </VBox>
                         </HBox>
                     </VBox>

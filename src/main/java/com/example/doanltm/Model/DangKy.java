@@ -20,6 +20,7 @@ public class DangKy implements Serializable {
     // Thông tin bổ sung để hiển thị
     private String tenNguoiDung;
     private String moTaCaLam;
+    private String loaiCa;
     
     public enum TrangThai {
         CHO_DUYET("chờ duyệt"),
@@ -152,18 +153,19 @@ public class DangKy implements Serializable {
         this.moTaCaLam = moTaCaLam;
     }
     
+    public String getLoaiCa() {
+        return loaiCa != null ? loaiCa : (isCaGay() ? "Ca gãy" : "Ca bình thường");
+    }
+    
+    public void setLoaiCa(String loaiCa) {
+        this.loaiCa = loaiCa;
+    }
+    
     /**
      * Kiểm tra có phải ca gãy không
      */
     public boolean isCaGay() {
         return maCalam == null;
-    }
-    
-    /**
-     * Lấy mô tả loại ca
-     */
-    public String getLoaiCa() {
-        return isCaGay() ? "Ca gãy" : "Ca bình thường";
     }
     
     @Override
