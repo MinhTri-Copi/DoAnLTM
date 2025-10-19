@@ -18,7 +18,7 @@ public class RegisterController {
     @FXML private TextField emailField;
     @FXML private PasswordField passwordField;
     @FXML private PasswordField confirmPasswordField;
-    @FXML private ComboBox<String> roleComboBox;
+    // Removed roleComboBox - default role is Employee (2)
     @FXML private Label messageLabel;
     @FXML private Button registerButton;
     @FXML private Button backToLoginButton;
@@ -28,9 +28,7 @@ public class RegisterController {
 
     @FXML
     public void initialize() {
-        if (roleComboBox != null) {
-            roleComboBox.getItems().addAll("Admin", "Nhân viên");
-        }
+        // No initialization needed - role is defaulted to Employee
     }
 
     @FXML
@@ -39,9 +37,9 @@ public class RegisterController {
         String email = getText(emailField);
         String password = passwordField != null ? passwordField.getText() : "";
         String confirm = confirmPasswordField != null ? confirmPasswordField.getText() : "";
-        String role = roleComboBox != null ? roleComboBox.getValue() : null;
+        // Default role is Employee (2)
 
-        if (fullName.isEmpty() || email.isEmpty() || password.isEmpty() || confirm.isEmpty() || role == null) {
+        if (fullName.isEmpty() || email.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
             showMessage("Vui lòng nhập đầy đủ thông tin!", true);
             return;
         }
@@ -62,7 +60,7 @@ public class RegisterController {
             return;
         }
 
-        int maVaitro = "Admin".equals(role) ? 1 : 2; // 1=Admin, 2=Nhân viên
+        int maVaitro = 2; // Always Employee role
         User created = registrationDAO.createUser(fullName, email, password, maVaitro);
         if (created != null) {
             // Luôn quay về trang đăng nhập sau khi đăng ký (kể cả Admin)
@@ -104,7 +102,7 @@ public class RegisterController {
         if (emailField != null) emailField.clear();
         if (passwordField != null) passwordField.clear();
         if (confirmPasswordField != null) confirmPasswordField.clear();
-        if (roleComboBox != null) roleComboBox.getSelectionModel().clearSelection();
+        // No role selection to clear
     }
 
     private void showMessage(String msg, boolean isError) {

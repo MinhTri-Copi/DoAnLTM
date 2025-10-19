@@ -8,7 +8,7 @@
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.example.doanltm.Controller.RegisterController"
-            prefHeight="600.0" prefWidth="400.0"
+            prefHeight="500.0" prefWidth="400.0"
             style="-fx-background-color: #f5f5f5;">
 
     <VBox alignment="CENTER" spacing="20.0" AnchorPane.topAnchor="30.0" 
@@ -99,18 +99,6 @@
                 </PasswordField>
             </VBox>
             
-            <!-- Role Selection -->
-            <VBox spacing="5.0">
-                <Label text="Vai trò:*" style="-fx-text-fill: #555;">
-                    <font>
-                        <Font size="14.0"/>
-                    </font>
-                </Label>
-                <ComboBox fx:id="roleComboBox" promptText="Chọn vai trò" maxWidth="Infinity"
-                         style="-fx-background-radius: 5; -fx-border-radius: 5; 
-                                -fx-border-color: #ddd;"/>
-            </VBox>
-            
             <!-- Error/Success Label -->
             <Label fx:id="messageLabel" wrapText="true" visible="false">
                 <font>
@@ -122,7 +110,7 @@
             <HBox spacing="10.0" alignment="CENTER">
                 <Button fx:id="registerButton" text="ĐĂNG KÝ" onAction="#handleRegister"
                        prefWidth="120.0" prefHeight="40.0"
-                       style="-fx-background-color: #27ae60; -fx-text-fill: white; 
+                       style="-fx-background-color: #3498db; -fx-text-fill: white; 
                               -fx-background-radius: 5; -fx-font-weight: bold;">
                     <font>
                         <Font size="14.0"/>
@@ -131,7 +119,7 @@
                 
                 <Button fx:id="backToLoginButton" text="QUAY LẠI" onAction="#handleBackToLogin"
                        prefWidth="120.0" prefHeight="40.0"
-                       style="-fx-background-color: #95a5a6; -fx-text-fill: white; 
+                       style="-fx-background-color: #e74c3c; -fx-text-fill: white; 
                               -fx-background-radius: 5; -fx-font-weight: bold;">
                     <font>
                         <Font size="14.0"/>
