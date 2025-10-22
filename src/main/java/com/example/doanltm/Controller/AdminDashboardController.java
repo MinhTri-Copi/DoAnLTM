@@ -618,6 +618,8 @@ public class AdminDashboardController {
         List<CaLam> shiftList = caLamDAO.getCaLamWithFilter(shiftSearchKeyword, shiftPageSize, offset);
         shiftTotalRecords = caLamDAO.countCaLamWithFilter(shiftSearchKeyword);
         
+        System.out.println("⏰ [SHIFT MANAGEMENT] Lấy danh sách ca làm - Trang: " + shiftCurrentPage + " | Tìm kiếm: " + (shiftSearchKeyword.isEmpty() ? "(không)" : shiftSearchKeyword) + " | Tổng: " + shiftTotalRecords);
+        
         Platform.runLater(() -> {
             shifts.setAll(shiftList);
             updateShiftPaginationControls();
@@ -705,11 +707,14 @@ public class AdminDashboardController {
         });
         
         dlg.showAndWait().ifPresent(caLam -> {
+            System.out.println("➕ [SHIFT ADD] Mô tả: " + caLam.getMoTa() + " | Giờ: " + caLam.getGioBatdau() + " - " + caLam.getGioKetthuc() + " | Max: " + caLam.getSoLuongToiDa());
             if (caLamDAO.insertCaLam(caLam)) {
+                System.out.println("✅ [SHIFT ADD] Thêm thành công!");
                 shiftCurrentPage = 1;
                 refreshShifts();
                 showInfo("Thêm ca làm thành công!");
             } else {
+                System.out.println("❌ [SHIFT ADD] Thêm thất bại!");
                 Alert err = new Alert(Alert.AlertType.ERROR, "Thêm ca làm thất bại!", ButtonType.OK);
                 err.setHeaderText(null);
                 err.showAndWait();
@@ -872,6 +877,8 @@ public class AdminDashboardController {
         List<User> userList = userDAO.getUsersWithFilter(userSearchKeyword, userPageSize, offset);
         userTotalRecords = userDAO.countUsersWithFilter(userSearchKeyword);
         
+        System.out.println("👥 [USER MANAGEMENT] Lấy danh sách người dùng - Trang: " + userCurrentPage + " | Tìm kiếm: " + (userSearchKeyword.isEmpty() ? "(không)" : userSearchKeyword) + " | Tổng: " + userTotalRecords);
+        
         Platform.runLater(() -> {
             users.setAll(userList);
             updateUserPaginationControls();
@@ -962,11 +969,14 @@ public class AdminDashboardController {
         });
         
         dlg.showAndWait().ifPresent(user -> {
+            System.out.println("➕ [USER ADD] Email: " + user.getEmail() + " | Tên: " + user.getHoTen() + " | Role: " + user.getTenVaitro());
             if (userDAO.insertUser(user)) {
+                System.out.println("✅ [USER ADD] Thêm thành công!");
                 userCurrentPage = 1;
                 refreshUsers();
                 showInfo("Thêm người dùng thành công!");
             } else {
+                System.out.println("❌ [USER ADD] Thêm thất bại!");
                 Alert err = new Alert(Alert.AlertType.ERROR, "Thêm người dùng thất bại!", ButtonType.OK);
                 err.setHeaderText(null);
                 err.showAndWait();
@@ -1028,10 +1038,13 @@ public class AdminDashboardController {
         });
         
         dlg.showAndWait().ifPresent(updated -> {
+            System.out.println("✏️  [USER EDIT] ID: " + updated.getMaNguoidung() + " | Email: " + updated.getEmail() + " | Tên: " + updated.getHoTen());
             if (userDAO.updateUser(updated)) {
+                System.out.println("✅ [USER EDIT] Cập nhật thành công!");
                 refreshUsers();
                 showInfo("Đập nhật người dùng thành công!");
             } else {
+                System.out.println("❌ [USER EDIT] Cập nhật thất bại!");
                 Alert err = new Alert(Alert.AlertType.ERROR, "Đập nhật người dùng thất bại!", ButtonType.OK);
                 err.setHeaderText(null);
                 err.showAndWait();
@@ -1105,6 +1118,8 @@ public class AdminDashboardController {
         
         List<DangKy> scheduleList = dangKyDAO.getScheduleWithFilter(scheduleSearchKeyword, fromDate, toDate, schedulePageSize, offset);
         scheduleTotalRecords = dangKyDAO.countScheduleWithFilter(scheduleSearchKeyword, fromDate, toDate);
+        
+        System.out.println("📅 [SCHEDULE MANAGEMENT] Lấy danh sách lịch - Trang: " + scheduleCurrentPage + " | Từ: " + fromDate + " Đến: " + toDate + " | Tìm kiếm: " + (scheduleSearchKeyword.isEmpty() ? "(không)" : scheduleSearchKeyword) + " | Tổng: " + scheduleTotalRecords);
         
         Platform.runLater(() -> {
             schedules.setAll(scheduleList);

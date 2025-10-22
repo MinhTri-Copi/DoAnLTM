@@ -71,8 +71,11 @@ public class RegisterController {
 
         int maVaitro = 2; // Always Employee role
         String hashedPassword = PasswordHashUtil.hashPassword(password);
+        System.out.println("📝 [REGISTER] Email: " + email + " | FullName: " + fullName);
+        System.out.println("🔐 [REGISTER] Password hashed: " + hashedPassword.substring(0, Math.min(20, hashedPassword.length())) + "...");
         User created = registrationDAO.createUser(fullName, email, hashedPassword, maVaitro);
         if (created != null) {
+            System.out.println("✅ [REGISTER] Đăng ký thành công! User ID: " + created.getMaNguoidung());
             // Luôn quay về trang đăng nhập sau khi đăng ký (kể cả Admin)
             try {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION, "Đăng ký thành công! Vui lòng đăng nhập.", ButtonType.OK);
