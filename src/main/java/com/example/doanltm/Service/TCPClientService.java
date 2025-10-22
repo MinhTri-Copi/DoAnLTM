@@ -27,7 +27,7 @@ public class TCPClientService {
         
         try {
             socket = new Socket(SERVER_HOST, SERVER_PORT);
-            socket.setSoTimeout(10000); // 10 giây timeout
+            socket.setSoTimeout(60000); // 20 giây timeout
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
             isConnected = true;
@@ -293,22 +293,22 @@ public class TCPClientService {
         if (!ensureConnection()) {
             return new CapNhatTrangThaiResponse(false, "Không thể kết nối đến server!");
         }
-        
+
         try {
             out.writeObject(request);
             out.flush();
             System.out.println("📤 Đã gửi cập nhật trạng thái request: " + request);
-            
+
             CapNhatTrangThaiResponse response = (CapNhatTrangThaiResponse) in.readObject();
             System.out.println("📥 Nhận cập nhật trạng thái response: " + response.getMessage());
-            
+
             return response;
-            
+
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
             e.printStackTrace();
             isConnected = false;
-            
+
             // Thử reconnect và gửi lại
             if (ensureConnection()) {
                 return capNhatTrangThai(request);
@@ -320,7 +320,37 @@ public class TCPClientService {
     /**
      * Kiểm tra trạng thái kết nối
      */
-    public boolean isConnected() {
-        return isConnected && socket != null && !socket.isClosed();
+    /**
+     * Lấy thống kê cá nhân
+     */
+    public synchronized ThongKeCaNhanResponse getThongKeCaNhan(ThongKeCaNhanRequest request) {
+        if (!ensureConnection()) {
+            return new ThongKeCaNhanResponse(false, "Không thể kết nối đến server!");
+        }
+        System.out.println("📤 Chuẩn bị gửi : " + request);
+
+        try {
+            out.writeObject(request);
+            out.flush();
+            System.out.println("📤 Đã gửi thống kê cá nhân  request: " + request);
+
+            ThongKeCaNhanResponse response = (ThongKeCaNhanResponse) in.readObject();
+            System.out.println("📥 Nhận thống kê admin response: " + response.getMessage());
+
+            return response;
+
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
+            e.printStackTrace();
+            isConnected = false;
+
+            // Thử reconnect và gửi lại
+            if (ensureConnection()) {
+                return getThongKeCaNhan(request);
+            }
+            return new ThongKeCaNhanResponse(false, "Lỗi kết nối: " + e.getMessage());
+        }
     }
+
+
 }

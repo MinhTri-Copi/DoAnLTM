@@ -12,6 +12,8 @@ module com.example.doanltm {
     requires com.almasb.fxgl.all;
     requires mysql.connector.j;
     requires java.sql;
+    requires javafx.graphics;
+    requires java.desktop;
 
 
     opens com.example.doanltm to javafx.fxml;

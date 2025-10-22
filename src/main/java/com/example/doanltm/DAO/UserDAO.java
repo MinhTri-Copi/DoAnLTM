@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 
 public class UserDAO {
     
@@ -189,5 +190,61 @@ public class UserDAO {
             e.printStackTrace();
         }
         return null;
+    }
+    public int getMonthlyTotal(LocalDate anyDateInMonth,int userID) {
+        String sql = "SELECT COUNT(*) FROM dangkycalam WHERE YEAR(ngay_lam)=? AND MONTH(ngay_lam)=? AND trangthai != 'từ chối' AND ma_nguoidung= ?";
+        System.out.println("🔍 Query Monthly Total - Year: " + anyDateInMonth.getYear() + ", Month: " + anyDateInMonth.getMonthValue()+1);
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, anyDateInMonth.getYear());
+            ps.setInt(2, anyDateInMonth.getMonthValue());
+            ps.setInt(3, userID);
+            System.out.println("🔍 SQL: " + sql);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int result = rs.getInt(1);
+                    System.out.println("✅ Monthly Total Result: " + result);
+                    return result;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Error in getMonthlyTotal: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    public int getApprovedCase(LocalDate anyDateInMonth,int userID) {
+        String sql = "SELECT COUNT(*) FROM dangkycalam " +
+                "WHERE YEAR(ngay_lam)=? AND MONTH(ngay_lam)=? " +
+                "AND ma_calam IS NOT NULL AND trangthai = 'đã duyệt' AND ma_nguoidung= ?";
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, anyDateInMonth.getYear());
+            ps.setInt(2, anyDateInMonth.getMonthValue());
+            ps.setInt(3, userID);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    public int gettakePendingApproval(LocalDate anyDateInMonth,int userID) {
+        String sql = "SELECT COUNT(*) FROM dangkycalam " +
+                "WHERE YEAR(ngay_lam)=? AND MONTH(ngay_lam)=? " +
+                "AND ma_calam IS NOT NULL AND trangthai = 'chờ duyệt' AND ma_nguoidung= ?";
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, anyDateInMonth.getYear());
+            ps.setInt(2, anyDateInMonth.getMonthValue());
+            ps.setInt(3, userID);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 }

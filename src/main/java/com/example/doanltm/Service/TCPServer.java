@@ -133,6 +133,7 @@ public class TCPServer {
                 // Khởi tạo streams
                 out = new ObjectOutputStream(clientSocket.getOutputStream());
                 in = new ObjectInputStream(clientSocket.getInputStream());
+                System.out.println("test1");
 
                 // Lắng nghe request từ client
                 while (true) {
@@ -150,6 +151,8 @@ public class TCPServer {
                         handleHuyDangKyRequest((HuyDangKyRequest) request);
                     } else if (request instanceof ThongKeAdminRequest) {
                         handleThongKeAdminRequest((ThongKeAdminRequest) request);
+                    } else if (request instanceof ThongKeCaNhanRequest) {
+                        handleThongKeCaNhanRequest((ThongKeCaNhanRequest) request);
                     } else if (request instanceof DanhSachDangKyAdminRequest) {
                         handleDanhSachDangKyAdminRequest((DanhSachDangKyAdminRequest) request);
                     } else if (request instanceof CapNhatTrangThaiRequest) {
@@ -165,6 +168,29 @@ public class TCPServer {
                 System.err.println("❌ Lỗi xử lý client " + clientId + ": " + e.getMessage());
             } finally {
                 closeConnection();
+            }
+        }
+
+        private void handleThongKeCaNhanRequest(ThongKeCaNhanRequest request) {
+            System.out.println("📥 Nhận thống kê User request: " + request);
+            try {
+
+                int total = userDAO.getMonthlyTotal(request.getMonth(),request.getMaNguoidung());
+                int normalShifts = userDAO.getApprovedCase(request.getMonth(),request.getMaNguoidung());
+                int brokenShifts = userDAO.gettakePendingApproval(request.getMonth(),request.getMaNguoidung());
+
+                ThongKeCaNhanResponse response = new ThongKeCaNhanResponse(
+                        true, "Lấy thống kê thành công!", total, normalShifts, brokenShifts);
+
+                System.out.println("✅ Thống kê admin - Tổng: " + total + ", Ca bình thường: " + normalShifts + ", Ca gãy: " + brokenShifts);
+
+                out.writeObject(response);
+                out.flush();
+                System.out.println("📤 Đã gửi ThongKeCaNhanResponse về client\n");
+
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi gửi response: " + e.getMessage());
+                e.printStackTrace();
             }
         }
 

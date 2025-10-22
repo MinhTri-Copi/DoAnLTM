@@ -1,14 +1,8 @@
 package com.example.doanltm.Controller;
 
 import com.example.doanltm.Model.*;
-import com.example.doanltm.Request.DangKyRequest;
-import com.example.doanltm.Request.GetCaLamRequest;
-import com.example.doanltm.Request.GetDangKyRequest;
-import com.example.doanltm.Request.HuyDangKyRequest;
-import com.example.doanltm.Response.DangKyResponse;
-import com.example.doanltm.Response.GetCaLamResponse;
-import com.example.doanltm.Response.GetDangKyResponse;
-import com.example.doanltm.Response.HuyDangKyResponse;
+import com.example.doanltm.Request.*;
+import com.example.doanltm.Response.*;
 import com.example.doanltm.Service.TCPClientService;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
@@ -20,11 +14,16 @@ import javafx.collections.transformation.SortedList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
+import javafx.event.ActionEvent;
 import java.io.IOException;
 import java.sql.Time;
 import java.time.LocalDate;
@@ -37,7 +36,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javafx.animation.FadeTransition;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
 
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 public class EnhancedUserDashboardController {
 
     // User info
@@ -69,7 +75,8 @@ public class EnhancedUserDashboardController {
     @FXML private TextField searchField;
     @FXML private ComboBox<String> statusFilterCombo;
     @FXML private ComboBox<String> typeFilterCombo;
-    
+    @FXML private AnchorPane contentArea;
+    @FXML private ScrollPane mainScrollPane;
     // Table Controls
     @FXML private TableView<DangKy> dangKyTableView;
     @FXML private TableColumn<DangKy, LocalDate> colNgayLam;
@@ -96,6 +103,7 @@ public class EnhancedUserDashboardController {
         setupTableView();
         setupCaLamComboBox();
         startAutoRefresh();
+        showPersonalInfoAnalysts();
     }
 
     /**
@@ -296,7 +304,7 @@ public class EnhancedUserDashboardController {
         // Enhanced action column
         if (colAction != null) {
             colAction.setCellFactory(param -> new TableCell<DangKy, Void>() {
-                private final Button huyButton = new Button("🗑️ Hủy");
+                private final Button huyButton = new Button("\uD83D\uDDD1 Hủy");
                 
                 {
                     huyButton.getStyleClass().addAll("btn", "btn-danger");
@@ -430,17 +438,86 @@ public class EnhancedUserDashboardController {
 
     @FXML
     private void handlePersonalStats() {
-        showInfoDialog("📊 Thống kê cá nhân", "Tính năng đang được phát triển...");
+        try {
+            showPersonalInfoAnalysts();
+            javafx.application.Platform.runLater(() -> {
+                if (contentArea != null && mainScrollPane != null) {
+                    double targetY = contentArea.getBoundsInParent().getMinY()+100;
+                    double totalHeight = mainScrollPane.getContent().getBoundsInLocal().getHeight();
+
+                    double scrollPosition = targetY / totalHeight;
+
+                    new Thread(() -> {
+                        try {
+                            for (double v = mainScrollPane.getVvalue(); v < scrollPosition; v += 0.02) {
+                                double finalV = v;
+                                javafx.application.Platform.runLater(() -> mainScrollPane.setVvalue(finalV));
+                                Thread.sleep(10);
+                            }
+                        } catch (InterruptedException ignored) {}
+                    }).start();
+                }
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
     private void handleSettings() {
-        showInfoDialog("⚙️ Cài đặt", "Tính năng đang được phát triển...");
+        try {
+            showSettings();
+            javafx.application.Platform.runLater(() -> {
+                if (contentArea != null && mainScrollPane != null) {
+                    double targetY = contentArea.getBoundsInParent().getMinY();
+                    double totalHeight = mainScrollPane.getContent().getBoundsInLocal().getHeight();
+
+                    double scrollPosition = targetY / totalHeight;
+
+                    new Thread(() -> {
+                        try {
+                            for (double v = mainScrollPane.getVvalue(); v < scrollPosition; v += 0.02) {
+                                double finalV = v;
+                                javafx.application.Platform.runLater(() -> mainScrollPane.setVvalue(finalV));
+                                Thread.sleep(10);
+                            }
+                        } catch (InterruptedException ignored) {}
+                    }).start();
+                }
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
     private void handleChangePassword() {
-        showInfoDialog("🔑 Đổi mật khẩu", "Tính năng đang được phát triển...");
+        try {
+            showSettings();
+            javafx.application.Platform.runLater(() -> {
+                if (contentArea != null && mainScrollPane != null) {
+                    double targetY = contentArea.getBoundsInParent().getMinY();
+                    double totalHeight = mainScrollPane.getContent().getBoundsInLocal().getHeight();
+
+                    double scrollPosition = targetY / totalHeight;
+
+                    new Thread(() -> {
+                        try {
+                            for (double v = mainScrollPane.getVvalue(); v < scrollPosition; v += 0.02) {
+                                double finalV = v;
+                                javafx.application.Platform.runLater(() -> mainScrollPane.setVvalue(finalV));
+                                Thread.sleep(10);
+                            }
+                        } catch (InterruptedException ignored) {}
+                    }).start();
+                }
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -825,6 +902,114 @@ public class EnhancedUserDashboardController {
     public void cleanup() {
         if (scheduler != null) {
             scheduler.shutdown();
+        }
+    }
+
+    @FXML
+    private void showPersonalInfoAnalysts() {
+        VBox personalInfoBox = new VBox(20);
+        personalInfoBox.setPadding(new Insets(40, 50, 40, 50));
+        personalInfoBox.setStyle("-fx-background-color: linear-gradient(to bottom right, #f4f7fb, #e8efff);" +
+                "-fx-background-radius: 20;");
+        personalInfoBox.setPrefWidth(800);
+
+        Label titleLabel = new Label("👤 Thống kê cá nhân");
+        titleLabel.setStyle("-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #34495e;");
+
+        Label nameLabel = new Label("Họ tên: " + (currentUser != null ? currentUser.getHoTen() : "Không xác định"));
+        nameLabel.setStyle("-fx-font-size: 18; -fx-text-fill: #2c3e50;");
+
+        Label roleLabel = new Label("Chức vụ: " + (currentUser != null ? currentUser.getTenVaitro() : "Nhân viên"));
+        roleLabel.setStyle("-fx-font-size: 18; -fx-text-fill: #2c3e50;");
+
+        HBox statsBox = new HBox(25);
+        statsBox.setAlignment(Pos.CENTER);
+        statsBox.setPadding(new Insets(20, 0, 0, 0));
+
+        new Thread(() -> {
+            try {
+                ThongKeCaNhanResponse stats = tcpClientService.getThongKeCaNhan(
+                        new ThongKeCaNhanRequest(LocalDate.now(), currentUser.getMaNguoidung())
+                );
+
+                Platform.runLater(() -> {
+                    VBox totalCard = createStatCard("📅", "Tổng số ca", String.valueOf(stats.getMonthlyTotal()));
+                    VBox approvedCard = createStatCard("✅", "Ca đã duyệt", String.valueOf(stats.getNormalShiftsCount()));
+                    VBox pendingCard = createStatCard("⏳", "Ca chờ duyệt", String.valueOf(stats.getBrokenShiftsCount()));
+
+                    statsBox.getChildren().addAll(totalCard, approvedCard, pendingCard);
+
+                    Label noteLabel = new Label("Các thống kê được cập nhật tự động theo dữ liệu trong hệ thống.");
+                    noteLabel.setStyle("-fx-font-size: 14; -fx-text-fill: #7f8c8d;");
+
+                    personalInfoBox.getChildren().addAll(titleLabel, nameLabel, roleLabel, statsBox, noteLabel);
+
+                    FadeTransition fadeIn = new FadeTransition(Duration.millis(600), personalInfoBox);
+                    fadeIn.setFromValue(0);
+                    fadeIn.setToValue(1);
+                    fadeIn.play();
+
+                    contentArea.getChildren().setAll(personalInfoBox);
+                    AnchorPane.setTopAnchor(personalInfoBox, 0.0);
+                    AnchorPane.setLeftAnchor(personalInfoBox, 0.0);
+                    AnchorPane.setRightAnchor(personalInfoBox, 0.0);
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private VBox createStatCard(String icon, String title, String value) {
+        VBox card = new VBox(10);
+        card.setAlignment(Pos.CENTER);
+        card.setPrefSize(180, 120);
+        card.setStyle("""
+        -fx-background-color: white;
+        -fx-border-color: #dfe6e9;
+        -fx-border-radius: 15;
+        -fx-background-radius: 15;
+        -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 8, 0, 0, 3);
+    """);
+
+        Label iconLabel = new Label(icon);
+        iconLabel.setStyle("-fx-font-size: 28;");
+
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("-fx-font-size: 16; -fx-text-fill: #636e72;");
+
+        Label valueLabel = new Label(value);
+        valueLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #0984e3;");
+
+        card.getChildren().addAll(iconLabel, titleLabel, valueLabel);
+        return card;
+    }
+
+
+    @FXML
+    private void showSettings() {
+        try {
+            AnchorPane settings = new AnchorPane();
+
+            Label label = new Label("⚙ Cài đặt tài khoản");
+            label.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+            label.setLayoutX(40);
+            label.setLayoutY(30);
+
+            javafx.scene.control.Button btnChangePassword = new javafx.scene.control.Button("🔒 Đổi mật khẩu");
+            btnChangePassword.setLayoutX(60);
+            btnChangePassword.setLayoutY(80);
+            btnChangePassword.setPrefWidth(200);
+
+            javafx.scene.control.Button btnLogout = new javafx.scene.control.Button("🚪 Đăng xuất");
+            btnLogout.setLayoutX(60);
+            btnLogout.setLayoutY(130);
+            btnLogout.setPrefWidth(200);
+            btnLogout.setOnAction(event -> handleLogout());
+            settings.getChildren().addAll(label, btnChangePassword, btnLogout);
+            contentArea.getChildren().setAll(settings);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
