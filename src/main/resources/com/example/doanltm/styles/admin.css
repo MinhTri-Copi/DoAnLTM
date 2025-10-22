@@ -82,7 +82,7 @@
     -fx-cursor: hand;
     -fx-min-height: 52;
     -fx-pref-height: 52;
-    -fx-max-width: Infinity;
+    -fx-max-width: 10000;
 }
 
 .sidebar-btn:hover {
@@ -131,9 +131,9 @@
 }
 
 .nav-text {
-    -fx-text-fill: inherit;
-    -fx-font-size: inherit;
-    -fx-font-weight: inherit;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
 }
 
 .sidebar-btn:hover .nav-icon {
@@ -251,7 +251,7 @@
 
 .stat-card-value {
     -fx-text-fill: #1f2937;
-    -fx-font-size: 24px;
+    -fx-font-size: 20px;
     -fx-font-weight: bold;
 }
 
