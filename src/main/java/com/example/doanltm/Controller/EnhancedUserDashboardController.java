@@ -18,8 +18,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
@@ -41,8 +40,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 public class EnhancedUserDashboardController {
 
@@ -922,6 +919,9 @@ public class EnhancedUserDashboardController {
         Label roleLabel = new Label("Chức vụ: " + (currentUser != null ? currentUser.getTenVaitro() : "Nhân viên"));
         roleLabel.setStyle("-fx-font-size: 18; -fx-text-fill: #2c3e50;");
 
+        Label emailLabel = new Label("Email: " + (currentUser != null ? currentUser.getEmail() : "@gmail.com"));
+        emailLabel.setStyle("-fx-font-size: 18; -fx-text-fill: #2c3e50;");
+
         HBox statsBox = new HBox(25);
         statsBox.setAlignment(Pos.CENTER);
         statsBox.setPadding(new Insets(20, 0, 0, 0));
@@ -942,7 +942,7 @@ public class EnhancedUserDashboardController {
                     Label noteLabel = new Label("Các thống kê được cập nhật tự động theo dữ liệu trong hệ thống.");
                     noteLabel.setStyle("-fx-font-size: 14; -fx-text-fill: #7f8c8d;");
 
-                    personalInfoBox.getChildren().addAll(titleLabel, nameLabel, roleLabel, statsBox, noteLabel);
+                    personalInfoBox.getChildren().addAll(titleLabel, nameLabel, roleLabel,emailLabel, statsBox, noteLabel);
 
                     FadeTransition fadeIn = new FadeTransition(Duration.millis(600), personalInfoBox);
                     fadeIn.setFromValue(0);
@@ -1000,7 +1000,7 @@ public class EnhancedUserDashboardController {
             btnChangePassword.setLayoutX(60);
             btnChangePassword.setLayoutY(80);
             btnChangePassword.setPrefWidth(200);
-
+            btnChangePassword.setOnAction(event -> {handleChangePasswordBTN();});
             javafx.scene.control.Button btnLogout = new javafx.scene.control.Button("🚪 Đăng xuất");
             btnLogout.setLayoutX(60);
             btnLogout.setLayoutY(130);
@@ -1010,6 +1010,100 @@ public class EnhancedUserDashboardController {
             contentArea.getChildren().setAll(settings);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void handleChangePasswordBTN() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Đổi mật khẩu");
+        dialog.setHeaderText("🔒 Vui lòng nhập thông tin đổi mật khẩu");
+
+        // Nút xác nhận & hủy
+        ButtonType confirmButtonType = new ButtonType("Xác nhận", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButtonType = new ButtonType("Hủy", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(confirmButtonType, cancelButtonType);
+
+        // Tạo layout form
+        GridPane grid = new GridPane();
+        grid.setHgap(15);
+        grid.setVgap(15);
+        grid.setPadding(new Insets(20, 30, 20, 30));
+
+        PasswordField oldPasswordField = new PasswordField();
+        oldPasswordField.setPromptText("Nhập mật khẩu hiện tại");
+
+        PasswordField newPasswordField = new PasswordField();
+        newPasswordField.setPromptText("Nhập mật khẩu mới");
+
+        grid.add(new Label("Mật khẩu hiện tại:"), 0, 0);
+        grid.add(oldPasswordField, 1, 0);
+        grid.add(new Label("Mật khẩu mới:"), 0, 1);
+        grid.add(newPasswordField, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Xử lý khi nhấn nút xác nhận
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == confirmButtonType) {
+                String oldPass = oldPasswordField.getText();
+                String newPass = newPasswordField.getText();
+
+                if (oldPass.isEmpty() || newPass.isEmpty()) {
+                    showAlert("Lỗi", "Vui lòng nhập đầy đủ thông tin!", Alert.AlertType.WARNING);
+                } else {
+                    // Gọi hàm đổi mật khẩu thật sự ở đây
+                    boolean success = changePassword(currentUser.getMaNguoidung(), oldPass, newPass);
+                    if (success) {
+                        showAlert("Thành công", "Đổi mật khẩu thành công!", Alert.AlertType.INFORMATION);
+                    } else {
+                        showAlert("Thất bại", "Mật khẩu hiện tại không đúng!", Alert.AlertType.ERROR);
+                    }
+                }
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
+    }
+
+    private void showAlert(String title, String message, Alert.AlertType type) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+    private boolean changePassword(int userId, String oldPass, String newPass) {
+        if (oldPass.equals(currentUser.getMatKhau())) {
+
+            new Thread(() -> {
+                try {
+                    DoiMatKhauResponse response = tcpClientService.DoiMatKhau(
+                            new DoiMatKhauRequest(userId, newPass)
+                    );
+
+                    Platform.runLater(() -> {
+                        if (response != null && response.isSuccess()) {
+
+                            // Cập nhật lại mật khẩu mới trong đối tượng currentUser
+                            currentUser.setMatKhau(newPass);
+                        } else {
+                            showAlert("Thất bại", "⚠️ Đổi mật khẩu thất bại. Vui lòng thử lại!", Alert.AlertType.ERROR);
+                        }
+                    });
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Platform.runLater(() ->
+                            showAlert("Lỗi", "Không thể kết nối tới máy chủ!", Alert.AlertType.ERROR)
+                    );
+                }
+            }).start();
+
+            return true;
+        } else {
+            showAlert("Sai mật khẩu", "❌ Mật khẩu hiện tại không đúng!", Alert.AlertType.WARNING);
+            return false;
         }
     }
 }

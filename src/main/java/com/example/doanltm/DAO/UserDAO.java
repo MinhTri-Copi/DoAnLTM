@@ -90,7 +90,7 @@ public class UserDAO {
      * Xác thực người dùng với email và mật khẩu
      */
     public User authenticate(String email, String matKhau) {
-        String sql = "SELECT n.ma_nguoidung, n.email, n.ho_ten, n.ma_vaitro, v.ten_vaitro " +
+        String sql = "SELECT n.ma_nguoidung, n.email, n.ho_ten, n.ma_vaitro, v.ten_vaitro, n.mat_khau " +
                      "FROM nguoidung n " +
                      "INNER JOIN vaitro v ON n.ma_vaitro = v.ma_vaitro " +
                      "WHERE n.email = ? AND n.mat_khau = ?";
@@ -114,7 +114,8 @@ public class UserDAO {
                 user.setHoTen(rs.getString("ho_ten"));
                 user.setMaVaitro(rs.getInt("ma_vaitro"));
                 user.setTenVaitro(rs.getString("ten_vaitro"));
-                
+                user.setMatKhau(rs.getString("mat_khau"));
+
                 System.out.println("✅ Tìm thấy user: " + user);
                 return user;
             } else {
@@ -247,4 +248,20 @@ public class UserDAO {
         }
         return 0;
     }
+
+    public boolean updatePassword(int maNguoidung, String matKhauMoi) {
+        String sql = "UPDATE nguoidung SET mat_khau = ? WHERE ma_nguoidung = ?";
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, matKhauMoi);
+            ps.setInt(2, maNguoidung);
+
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 }

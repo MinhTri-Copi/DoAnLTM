@@ -20,12 +20,13 @@ public class User implements Serializable {
         this.matKhau = matKhau;
     }
     
-    public User(int maNguoidung, String email, String hoTen, int maVaitro, String tenVaitro) {
+    public User(int maNguoidung, String email, String hoTen, int maVaitro, String tenVaitro,  String matKhau) {
         this.maNguoidung = maNguoidung;
         this.email = email;
         this.hoTen = hoTen;
         this.maVaitro = maVaitro;
         this.tenVaitro = tenVaitro;
+        this.matKhau = matKhau;
     }
     
     // Getters and Setters
@@ -49,8 +50,8 @@ public class User implements Serializable {
         return matKhau;
     }
     
-    public void setMatKhau(String matKhau) {
-        this.matKhau = matKhau;
+    public void setMatKhau(String matKhauUser) {
+        this.matKhau = matKhauUser;
     }
     
     public String getHoTen() {

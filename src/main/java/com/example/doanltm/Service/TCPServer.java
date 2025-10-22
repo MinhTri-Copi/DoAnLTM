@@ -157,6 +157,8 @@ public class TCPServer {
                         handleDanhSachDangKyAdminRequest((DanhSachDangKyAdminRequest) request);
                     } else if (request instanceof CapNhatTrangThaiRequest) {
                         handleCapNhatTrangThaiRequest((CapNhatTrangThaiRequest) request);
+                    } else if (request instanceof DoiMatKhauRequest) {
+                        handleDoiMatKhauRequest((DoiMatKhauRequest) request);
                     } else {
                         System.out.println("⚠️ Request không xác định: " + request.getClass().getName());
                     }
@@ -170,6 +172,46 @@ public class TCPServer {
                 closeConnection();
             }
         }
+
+        private void handleDoiMatKhauRequest(DoiMatKhauRequest request) {
+            System.out.println("📥 Nhận yêu cầu đổi mật khẩu từ người dùng: " + request.getMaNguoidung());
+
+            try {
+                User user = userDAO.getUserById(request.getMaNguoidung());
+                if (user == null) {
+                    DoiMatKhauResponse response = new DoiMatKhauResponse(false, "Không tìm thấy người dùng!");
+                    out.writeObject(response);
+                    out.flush();
+                    return;
+                }
+                boolean success = userDAO.updatePassword(request.getMaNguoidung(), request.getMatKhauMoi());
+                if (success) {
+                    DoiMatKhauResponse response = new DoiMatKhauResponse(true, "Đổi mật khẩu thành công!");
+                    out.writeObject(response);
+                    out.flush();
+                    System.out.println("✅ Người dùng " + request.getMaNguoidung() + " đã đổi mật khẩu thành công!");
+                } else {
+                    DoiMatKhauResponse response = new DoiMatKhauResponse(false, "Đổi mật khẩu thất bại!");
+                    out.writeObject(response);
+                    out.flush();
+                }
+
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi gửi phản hồi đổi mật khẩu: " + e.getMessage());
+                e.printStackTrace();
+            } catch (Exception e) {
+                System.err.println("⚠️ Lỗi xử lý đổi mật khẩu: " + e.getMessage());
+                e.printStackTrace();
+                try {
+                    DoiMatKhauResponse response = new DoiMatKhauResponse(false, "Đã xảy ra lỗi trong quá trình đổi mật khẩu!");
+                    out.writeObject(response);
+                    out.flush();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+
 
         private void handleThongKeCaNhanRequest(ThongKeCaNhanRequest request) {
             System.out.println("📥 Nhận thống kê User request: " + request);
@@ -205,7 +247,7 @@ public class TCPServer {
 
                 LoginResponse response;
                 if (user != null) {
-                    user.setMatKhau(null); // Không gửi mật khẩu về client
+                    //user.setMatKhau(null); // Không gửi mật khẩu về client
                     response = new LoginResponse(true, "Đăng nhập thành công!", user);
                     System.out.println("✅ Login thành công cho user: " + user.getEmail());
                 } else {

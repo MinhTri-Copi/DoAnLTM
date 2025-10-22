@@ -353,4 +353,36 @@ public class TCPClientService {
     }
 
 
+    public DoiMatKhauResponse DoiMatKhau(DoiMatKhauRequest doiMatKhauRequest) {
+        if (!ensureConnection()) {
+            return new DoiMatKhauResponse(false, "Không thể kết nối đến server!");
+        }
+
+        System.out.println("📤 Chuẩn bị gửi yêu cầu đổi mật khẩu: " + doiMatKhauRequest);
+
+        try {
+            // Gửi yêu cầu
+            out.writeObject(doiMatKhauRequest);
+            out.flush();
+            System.out.println("📤 Đã gửi DoiMatKhauRequest: " + doiMatKhauRequest);
+
+            // Nhận phản hồi
+            DoiMatKhauResponse response = (DoiMatKhauResponse) in.readObject();
+            System.out.println("📥 Nhận DoiMatKhauResponse: " + response.getMessage());
+
+            return response;
+
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu (Đổi mật khẩu): " + e.getMessage());
+            e.printStackTrace();
+            isConnected = false;
+
+            // Thử kết nối lại và gửi lại request
+            if (ensureConnection()) {
+                return DoiMatKhau(doiMatKhauRequest);
+            }
+            return new DoiMatKhauResponse(false, "Lỗi kết nối: " + e.getMessage());
+        }
+    }
+
 }
