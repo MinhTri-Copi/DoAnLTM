@@ -1,20 +1,27 @@
 package com.example.doanltm.Controller;
 
 import com.example.doanltm.DAO.CaLamDAO;
+import com.example.doanltm.DAO.DangKyDAO;
 import com.example.doanltm.Model.CaLam;
+import com.example.doanltm.Model.ShiftStatusMonth;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
+import java.util.List;
 
 public class ShiftManagementController {
     @FXML private TableView<CaLam> table;
@@ -25,13 +32,25 @@ public class ShiftManagementController {
     @FXML private TableColumn<CaLam, Number> colMax;
     @FXML private TableColumn<CaLam, Number> colDaDK;
     @FXML private TextField searchField;
+    
+    // Bảng trạng thái ca làm theo tháng
+    @FXML private TableView<ShiftStatusMonth> monthTable;
+    @FXML private Button refreshMonthBtn;
 
     private final CaLamDAO dao = new CaLamDAO();
+    private final DangKyDAO dangKyDAO = new DangKyDAO();
     private final ObservableList<CaLam> data = FXCollections.observableArrayList();
     private FilteredList<CaLam> filtered;
+    private final ObservableList<ShiftStatusMonth> monthData = FXCollections.observableArrayList();
+    private YearMonth currentMonth;
 
     @FXML
     public void initialize() {
+        System.out.println("[INIT] ShiftManagementController.initialize() called");
+        System.out.println("[INIT] table: " + table);
+        System.out.println("[INIT] monthTable: " + monthTable);
+        System.out.println("[INIT] refreshMonthBtn: " + refreshMonthBtn);
+        
         colId.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().getMaCalam()));
         colMoTa.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getMoTa()));
         colGioBD.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(String.valueOf(c.getValue().getGioBatdau())));
@@ -47,9 +66,133 @@ public class ShiftManagementController {
             searchField.textProperty().addListener((obs, o, q) -> applyFilter(q));
         }
         loadData();
+        
+        // Khở tạo bảng tháng
+        try {
+            initializeMonthTable();
+            loadMonthData();
+        } catch (Exception ex) {
+            System.err.println("❌ Lỗi khi khở tạo bảng tháng: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+    
+    /**
+     * Khở tạo TableView cho bảng trạng thái ca làm theo tháng
+     */
+    private void initializeMonthTable() {
+        System.out.println("[DEBUG] initializeMonthTable called");
+        System.out.println("[DEBUG] monthTable: " + monthTable);
+        System.out.println("[DEBUG] monthTable is null: " + (monthTable == null));
+        
+        if (monthTable == null) {
+            System.err.println("❌ monthTable là null, không thể khở tạo");
+            return;
+        }
+        
+        System.out.println("[DEBUG] Xóa các cột cũ");
+        // Xóa các cột cũ (nếu có)
+        monthTable.getColumns().clear();
+        
+        currentMonth = YearMonth.now();
+        System.out.println("[DEBUG] Current month: " + currentMonth + ", days: " + currentMonth.lengthOfMonth());
+        
+        monthTable.setItems(monthData);
+        monthTable.setStyle("-fx-font-size: 10; -fx-fixed-cell-size: 35;");
+        monthTable.getStyleClass().add("month-table");
+        
+        // Cột cá làm
+        TableColumn<ShiftStatusMonth, String> colShift = new TableColumn<>("Ca làm");
+        colShift.setPrefWidth(100);
+        colShift.setMinWidth(100);
+        colShift.setResizable(false);
+        colShift.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().getTenCa()));
+        monthTable.getColumns().add(colShift);
+        
+        // Tạo 31 cột cho 31 ngày
+        int daysInMonth = currentMonth.lengthOfMonth();
+        for (int day = 1; day <= daysInMonth; day++) {
+            final int dayNum = day;
+            TableColumn<ShiftStatusMonth, String> dayCol = new TableColumn<>(String.valueOf(day));
+            dayCol.setPrefWidth(40);
+            dayCol.setMinWidth(40);
+            dayCol.setMaxWidth(40);
+            dayCol.setResizable(false);
+            
+            dayCol.setCellValueFactory(cellData -> 
+                new javafx.beans.property.SimpleStringProperty(
+                    cellData.getValue().getRegistrationCountForDay(dayNum) + "/" + 
+                    cellData.getValue().getSoLuongToiDa()
+                )
+            );
+            
+            // Tựng d᫠ng cell factory để định dạng màu
+            dayCol.setCellFactory(col -> new DayStatusCell(dayNum));
+            
+            monthTable.getColumns().add(dayCol);
+        }
+        
+        if (refreshMonthBtn != null) {
+            refreshMonthBtn.setOnAction(e -> loadMonthData());
+        }
+    }
+    
+    /**
+     * Custom TableCell để hiển thị trạng thái ca (full/chưa full) với màu
+     */
+    private class DayStatusCell extends TableCell<ShiftStatusMonth, String> {
+        private final int dayNum;
+        
+        public DayStatusCell(int dayNum) {
+            this.dayNum = dayNum;
+        }
+        
+        @Override
+        protected void updateItem(String item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || getTableRow() == null) {
+                setText(null);
+                setStyle("");
+            } else {
+                ShiftStatusMonth data = getTableRow().getItem();
+                if (data == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item);
+                    if (data.isFullForDay(dayNum)) {
+                        // Màu đỏ - full ca
+                        setStyle("-fx-background-color: #FF5252; -fx-text-fill: white; -fx-alignment: center; -fx-font-weight: bold;");
+                    } else {
+                        // Màu xanh - chưa full
+                        setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-alignment: center; -fx-font-weight: bold;");
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Tải dữ liệu bảng tháng
+     */
+    private void loadMonthData() {
+        currentMonth = YearMonth.now();
+        List<ShiftStatusMonth> data = dangKyDAO.getShiftStatusForMonth(currentMonth);
+        System.out.println("[DEBUG] Loaded " + data.size() + " shifts for month " + currentMonth);
+        monthData.setAll(data);
+        System.out.println("[DEBUG] monthData size: " + monthData.size());
     }
 
-    @FXML private void handleRefresh() { loadData(); }
+    @FXML private void handleRefresh() { 
+        loadData();
+        loadMonthData(); // Also refresh month data
+    }
+    
+    @FXML private void handleMonthRefresh() {
+        System.out.println("[TEST] Handle month refresh clicked");
+        System.out.println("[TEST] monthTable: " + monthTable);
+        loadMonthData();
+    }
 
     private void loadData() {
         data.setAll(dao.getCaLamWithRegistrationCount(LocalDate.now()));

@@ -6,6 +6,7 @@ import com.example.doanltm.DAO.DangKyDAO;
 import com.example.doanltm.Model.CaLam;
 import com.example.doanltm.Model.DangKy;
 import com.example.doanltm.Model.User;
+import com.example.doanltm.Model.ShiftStatusMonth;
 import com.example.doanltm.Service.TCPClientService;
 import com.example.doanltm.Request.*;
 import com.example.doanltm.Response.*;
@@ -20,6 +21,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Region;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.Node;
 import javafx.event.ActionEvent;
 import javafx.stage.Stage;
@@ -28,6 +31,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 public class AdminDashboardController {
 
@@ -147,6 +151,9 @@ public class AdminDashboardController {
     private int schedulePageSize = 10;
     private int scheduleTotalRecords = 0;
     private String scheduleSearchKeyword = "";
+
+    // Monthly Shift Status Management
+    @FXML private ScrollPane monthlyShiftStatusContent;
 
     private User currentUser;
 
@@ -433,6 +440,17 @@ public class AdminDashboardController {
         targetContent.setManaged(true);
     }
     
+    private void switchToContent(ScrollPane targetContent) {
+        if (contentContainer == null || targetContent == null) return;
+        
+        // Hide all content panes
+        hideAllContent();
+        
+        // Show the target content
+        targetContent.setVisible(true);
+        targetContent.setManaged(true);
+    }
+    
     private void hideAllContent() {
         if (overviewContent != null) {
             overviewContent.setVisible(false);
@@ -449,6 +467,10 @@ public class AdminDashboardController {
         if (scheduleManagementContent != null) {
             scheduleManagementContent.setVisible(false);
             scheduleManagementContent.setManaged(false);
+        }
+        if (monthlyShiftStatusContent != null) {
+            monthlyShiftStatusContent.setVisible(false);
+            monthlyShiftStatusContent.setManaged(false);
         }
     }
     
@@ -1145,6 +1167,191 @@ public class AdminDashboardController {
         
         if (btnScheduleNext != null) {
             btnScheduleNext.setDisable(scheduleCurrentPage >= totalPages || scheduleTotalRecords == 0);
+        }
+    }
+    
+    // ============ MONTHLY SHIFT STATUS METHODS ============
+    
+    @FXML private DatePicker monthPickerAdmin;
+    @FXML private Label monthYearLabelAdmin;
+    @FXML private HBox headerRowAdmin;
+    @FXML private HBox row1Admin;
+    @FXML private HBox row2Admin;
+    @FXML private HBox row3Admin;
+    @FXML private HBox row4Admin;
+    @FXML private VBox calendarContainerAdmin;
+    
+    private LocalDate selectedMonthAdmin = LocalDate.now();
+    private final Map<String, HBox> shiftRowMapAdmin = new java.util.HashMap<>();
+    private final CaLamDAO caLamDAOAdmin = new CaLamDAO();
+    private final DangKyDAO dangKyDAOAdmin = new DangKyDAO();
+    
+    @FXML private void showMonthlyShiftStatus() {
+        switchToContent(monthlyShiftStatusContent);
+        updateSidebarActiveState(null);
+        
+        // Initialize calendar on first load
+        if (monthPickerAdmin != null && monthPickerAdmin.getValue() == null) {
+            monthPickerAdmin.setValue(LocalDate.now());
+            monthPickerAdmin.setOnAction(e -> loadCalendarAdmin(monthPickerAdmin.getValue()));
+        }
+        
+        shiftRowMapAdmin.put("Ca sáng", row1Admin);
+        shiftRowMapAdmin.put("Ca trưa", row2Admin);
+        shiftRowMapAdmin.put("Ca chiều", row3Admin);
+        shiftRowMapAdmin.put("Ca tối", row4Admin);
+        
+        loadCalendarAdmin(LocalDate.now());
+    }
+    
+    @FXML private void handleRefreshCalendar() {
+        LocalDate selectedDate = (monthPickerAdmin != null && monthPickerAdmin.getValue() != null) 
+            ? monthPickerAdmin.getValue() : LocalDate.now();
+        loadCalendarAdmin(selectedDate);
+    }
+    
+    private void loadCalendarAdmin(LocalDate monthDate) {
+        selectedMonthAdmin = monthDate;
+        java.time.YearMonth yearMonth = java.time.YearMonth.from(monthDate);
+        int daysInMonth = yearMonth.lengthOfMonth();
+        int year = yearMonth.getYear();
+        int month = yearMonth.getMonthValue();
+        
+        System.out.println("📅 [CALENDAR] Loading calendar for month: " + month + "/" + year);
+        
+        if (monthYearLabelAdmin != null) {
+            monthYearLabelAdmin.setText("Tháng " + month + ", " + year);
+        }
+        
+        // Clear previous cells
+        clearCalendarAdmin();
+        
+        // Get all shifts
+        List<CaLam> shifts = caLamDAOAdmin.getAllCaLam();
+        System.out.println("📅 [CALENDAR] Total shifts found: " + shifts.size());
+        for (CaLam shift : shifts) {
+            System.out.println("   - " + shift.getMoTa() + " (Max: " + shift.getSoLuongToiDa() + ")");
+        }
+        if (shifts.isEmpty()) {
+            System.out.println("❌ [CALENDAR] No shifts found!");
+            return;
+        }
+        
+        // Get all registrations for this month
+        LocalDate firstDay = yearMonth.atDay(1);
+        LocalDate lastDay = yearMonth.atEndOfMonth();
+        System.out.println("📅 [CALENDAR] Fetching registrations from " + firstDay + " to " + lastDay);
+        List<DangKy> registrations = dangKyDAOAdmin.getScheduleWithFilter("", firstDay, lastDay, 1000, 0);
+        System.out.println("📅 [CALENDAR] Total registrations found: " + registrations.size());
+        for (DangKy reg : registrations) {
+            System.out.println("   - Date: " + reg.getNgayLam() + ", Shift: " + reg.getLoaiCa() + ", Status: " + reg.getTrangthai());
+        }
+        
+        // Build registration map: Map<day, Map<shift name, count>>
+        java.util.Map<Integer, java.util.Map<String, Integer>> dayRegistrations = new java.util.HashMap<>();
+        
+        // Initialize all days with all shifts
+        for (int day = 1; day <= daysInMonth; day++) {
+            dayRegistrations.put(day, new java.util.HashMap<>());
+            for (CaLam shift : shifts) {
+                dayRegistrations.get(day).put(shift.getMoTa(), 0);
+            }
+        }
+        
+        // Count registrations per day per shift
+        // IMPORTANT: Only count registrations with status "đã duyệt" (accepted)
+        for (DangKy reg : registrations) {
+            // Only count accepted registrations
+            if (reg.getTrangthai() == DangKy.TrangThai.DA_DUYET) {
+                int day = reg.getNgayLam().getDayOfMonth();
+                String shiftName = reg.getLoaiCa();
+                if (dayRegistrations.containsKey(day) && dayRegistrations.get(day).containsKey(shiftName)) {
+                    dayRegistrations.get(day).put(shiftName, 
+                        dayRegistrations.get(day).get(shiftName) + 1);
+                }
+            }
+        }
+        
+        // Log final registration counts
+        System.out.println("📅 [CALENDAR] Final registration count per day:");
+        for (int day = 1; day <= Math.min(5, daysInMonth); day++) {
+            for (CaLam shift : shifts) {
+                int count = dayRegistrations.get(day).getOrDefault(shift.getMoTa(), 0);
+                System.out.println("   Day " + day + ", " + shift.getMoTa() + ": " + count + "/" + shift.getSoLuongToiDa());
+            }
+        }
+        
+        // Generate header
+        generateHeaderAdmin(daysInMonth);
+        
+        // Generate rows
+        for (CaLam shift : shifts) {
+            HBox shiftRow = shiftRowMapAdmin.get(shift.getMoTa());
+            if (shiftRow != null) {
+                generateShiftRowAdmin(shiftRow, shift, daysInMonth, dayRegistrations, year, month);
+            }
+        }
+        System.out.println("✅ [CALENDAR] Calendar loaded successfully!");
+    }
+    
+    private void generateHeaderAdmin(int daysInMonth) {
+        while (headerRowAdmin.getChildren().size() > 1) {
+            headerRowAdmin.getChildren().remove(1);
+        }
+        for (int day = 1; day <= daysInMonth; day++) {
+            Label dayLabel = new Label(String.valueOf(day));
+            dayLabel.setMinWidth(60);
+            dayLabel.setMinHeight(40);
+            dayLabel.setStyle("-fx-border-color: #333333; -fx-border-width: 1; -fx-alignment: CENTER; -fx-font-weight: bold; -fx-background-color: #e5e7eb;");
+            dayLabel.setAlignment(javafx.geometry.Pos.CENTER);
+            headerRowAdmin.getChildren().add(dayLabel);
+        }
+    }
+    
+    private void generateShiftRowAdmin(HBox row, CaLam shift, int daysInMonth, 
+                                      java.util.Map<Integer, java.util.Map<String, Integer>> dayRegistrations,
+                                      int year, int month) {
+        while (row.getChildren().size() > 1) {
+            row.getChildren().remove(1);
+        }
+        
+        for (int day = 1; day <= daysInMonth; day++) {
+            int registered = dayRegistrations.get(day).getOrDefault(shift.getMoTa(), 0);
+            int capacity = shift.getSoLuongToiDa();
+            
+            // Determine color: RED if full, GREEN if has space (even if 0 registered)
+            String bgColor;
+            String status;
+            if (registered >= capacity) {
+                bgColor = "#ef4444"; // RED - Full
+                status = "Đầy";
+            } else {
+                bgColor = "#10b981"; // GREEN - Has space
+                status = "Còn chỗ";
+            }
+            
+            Region cell = new Region();
+            cell.setMinWidth(60);
+            cell.setMinHeight(40);
+            cell.setStyle("-fx-border-color: #333333; -fx-border-width: 1; -fx-background-color: " + bgColor + ";");
+            
+            javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
+                day + "/" + month + "\n" + shift.getMoTa() + "\n" + status + 
+                "\nĐăng ký: " + registered + "/" + capacity);
+            javafx.scene.control.Tooltip.install(cell, tooltip);
+            
+            row.getChildren().add(cell);
+        }
+    }
+    
+    private void clearCalendarAdmin() {
+        while (headerRowAdmin.getChildren().size() > 1) {
+            headerRowAdmin.getChildren().remove(1);
+        }
+        for (HBox row : shiftRowMapAdmin.values()) {
+            while (row.getChildren().size() > 1) {
+                row.getChildren().remove(1);
+            }
         }
     }
 }

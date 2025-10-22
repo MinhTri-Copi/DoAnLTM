@@ -59,6 +59,14 @@
                     </HBox>
                 </graphic>
             </Button>
+            <Button styleClass="sidebar-btn" onAction="#showMonthlyShiftStatus">
+                <graphic>
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <Label text="📅" styleClass="nav-icon"/>
+                        <Label text="Ca làm trong tháng" styleClass="nav-text"/>
+                    </HBox>
+                </graphic>
+            </Button>
         </VBox>
         
         <!-- Dynamic Content Container -->
@@ -71,44 +79,20 @@
                     <VBox spacing="16">
                         <Label text="Thống Kê Tổng Quan" styleClass="section-title"/>
                         <HBox spacing="20" alignment="CENTER_LEFT">
-                            <VBox styleClass="modern-stat-card stat-primary" HBox.hgrow="ALWAYS">
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <VBox styleClass="stat-icon-container stat-icon-blue">
-                                        <Label text="T" styleClass="stat-icon"/>
-                                    </VBox>
-                                    <VBox spacing="4">
-                                        <Label text="Tổng Ca Làm" styleClass="stat-card-title"/>
-                                        <Label fx:id="monthlyTotalLabel" styleClass="stat-card-value" text="0"/>
-                                    </VBox>
-                                </HBox>
-                                <Label text="Trong Tháng" styleClass="stat-card-subtitle"/>
-                            </VBox>
+                            <HBox styleClass="stat-card-hbox stat-primary" spacing="20" alignment="CENTER" HBox.hgrow="ALWAYS">
+                                <Label text="Tổng Ca Làm" styleClass="stat-card-title-white"/>
+                                <Label fx:id="monthlyTotalLabel" styleClass="stat-card-value-white" text="0"/>
+                            </HBox>
                             
-                            <VBox styleClass="modern-stat-card stat-success" HBox.hgrow="ALWAYS">
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <VBox styleClass="stat-icon-container stat-icon-green">
-                                        <Label text="🕗" styleClass="stat-icon"/>
-                                    </VBox>
-                                    <VBox spacing="4">
-                                        <Label text="Số Ca Bình Thường" styleClass="stat-card-title"/>
-                                        <Label fx:id="normalShiftLabel" styleClass="stat-card-value" text="0"/>
-                                    </VBox>
-                                </HBox>
-                                <Label text="Ca Cố Định" styleClass="stat-card-subtitle"/>
-                            </VBox>
+                            <HBox styleClass="stat-card-hbox stat-success" spacing="20" alignment="CENTER" HBox.hgrow="ALWAYS">
+                                <Label text="Số Ca Bình Thường" styleClass="stat-card-title-white"/>
+                                <Label fx:id="normalShiftLabel" styleClass="stat-card-value-white" text="0"/>
+                            </HBox>
                             
-                            <VBox styleClass="modern-stat-card stat-warning" HBox.hgrow="ALWAYS">
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <VBox styleClass="stat-icon-container stat-icon-orange">
-                                        <Label text="⏰" styleClass="stat-icon"/>
-                                    </VBox>
-                                    <VBox spacing="4">
-                                        <Label text="Số Ca Gãy" styleClass="stat-card-title"/>
-                                        <Label fx:id="brokenShiftLabel" styleClass="stat-card-value" text="0"/>
-                                    </VBox>
-                                </HBox>
-                                <Label text="Ca Linh Hoạt" styleClass="stat-card-subtitle"/>
-                            </VBox>
+                            <HBox styleClass="stat-card-hbox stat-warning" spacing="20" alignment="CENTER" HBox.hgrow="ALWAYS">
+                                <Label text="Số Ca Gãy" styleClass="stat-card-title-white"/>
+                                <Label fx:id="brokenShiftLabel" styleClass="stat-card-value-white" text="0"/>
+                            </HBox>
                         </HBox>
                     </VBox>
         
@@ -310,6 +294,61 @@
                         </HBox>
                     </VBox>
                 </VBox>
+                
+                <!-- Monthly Shift Status Content (Hidden by default) - Calendar View -->
+                <ScrollPane fx:id="monthlyShiftStatusContent" fitToWidth="true" fitToHeight="true" visible="false" managed="false" styleClass="content-scroll">
+                    <VBox spacing="20" style="-fx-padding: 20;">
+                        <!-- Title and Controls -->
+                        <VBox spacing="12">
+                            <Label text="Lịch Ca Làm Trong Tháng" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+                            <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0; -fx-padding: 10 0;">
+                                <Label text="Tháng:" style="-fx-font-weight: bold;"/>
+                                <DatePicker fx:id="monthPickerAdmin" promptText="Chọn tháng" style="-fx-min-width: 150;"/>
+                                <Button text="🔄 Làm mới" onAction="#handleRefreshCalendar" style="-fx-padding: 8 15; -fx-font-size: 12;"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="monthYearLabelAdmin" text="Tháng 10, 2025" style="-fx-font-size: 14; -fx-font-weight: bold;"/>
+                            </HBox>
+                        </VBox>
+                        
+                        <!-- Legend -->
+                        <HBox spacing="20" alignment="CENTER_LEFT" style="-fx-padding: 10; -fx-border-color: #f3f4f6; -fx-border-width: 1; -fx-background-color: #f9fafb;">
+                            <Label text="Chú thích:" style="-fx-font-weight: bold;"/>
+                            <HBox spacing="5" alignment="CENTER_LEFT">
+                                <Region style="-fx-background-color: #10b981; -fx-min-width: 20; -fx-min-height: 20; -fx-border-color: #333; -fx-border-width: 1;"/>
+                                <Label text="Còn chỗ trống"/>
+                            </HBox>
+                            <HBox spacing="5" alignment="CENTER_LEFT">
+                                <Region style="-fx-background-color: #ef4444; -fx-min-width: 20; -fx-min-height: 20; -fx-border-color: #333; -fx-border-width: 1;"/>
+                                <Label text="Đã đầy"/>
+                            </HBox>
+                        </HBox>
+                        
+                        <!-- Calendar Grid -->
+                        <VBox spacing="0" fx:id="calendarContainerAdmin">
+                            <!-- Header Row -->
+                            <HBox fx:id="headerRowAdmin" spacing="0" style="-fx-border-color: #111827; -fx-border-width: 2;">
+                                <Label text="Ca" style="-fx-min-width: 80; -fx-padding: 10; -fx-border-color: #111827; -fx-border-width: 0 1 0 0; -fx-alignment: CENTER; -fx-font-weight: bold; -fx-background-color: #f3f4f6;"/>
+                            </HBox>
+                            
+                            <!-- Shift Rows -->
+                            <HBox fx:id="row1Admin" spacing="0" style="-fx-border-color: #111827; -fx-border-width: 1 0 0 0;">
+                                <Label text="Sáng" style="-fx-min-width: 80; -fx-padding: 10; -fx-border-color: #111827; -fx-border-width: 0 1 0 0; -fx-alignment: CENTER; -fx-font-weight: bold; -fx-background-color: #f3f4f6;"/>
+                            </HBox>
+                            
+                            <HBox fx:id="row2Admin" spacing="0" style="-fx-border-color: #111827; -fx-border-width: 1 0 0 0;">
+                                <Label text="Trưa" style="-fx-min-width: 80; -fx-padding: 10; -fx-border-color: #111827; -fx-border-width: 0 1 0 0; -fx-alignment: CENTER; -fx-font-weight: bold; -fx-background-color: #f3f4f6;"/>
+                            </HBox>
+                            
+                            <HBox fx:id="row3Admin" spacing="0" style="-fx-border-color: #111827; -fx-border-width: 1 0 0 0;">
+                                <Label text="Chiều" style="-fx-min-width: 80; -fx-padding: 10; -fx-border-color: #111827; -fx-border-width: 0 1 0 0; -fx-alignment: CENTER; -fx-font-weight: bold; -fx-background-color: #f3f4f6;"/>
+                            </HBox>
+                            
+                            <HBox fx:id="row4Admin" spacing="0" style="-fx-border-color: #111827; -fx-border-width: 1 0 0 0;">
+                                <Label text="Tối" style="-fx-min-width: 80; -fx-padding: 10; -fx-border-color: #111827; -fx-border-width: 0 1 0 0; -fx-alignment: CENTER; -fx-font-weight: bold; -fx-background-color: #f3f4f6;"/>
+                            </HBox>
+                        </VBox>
+                    </VBox>
+                </ScrollPane>
                 
             </StackPane>
         </ScrollPane>

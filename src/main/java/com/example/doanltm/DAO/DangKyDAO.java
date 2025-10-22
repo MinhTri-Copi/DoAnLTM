@@ -1,10 +1,13 @@
 package com.example.doanltm.DAO;
 
 import com.example.doanltm.Database.BDConnection;
+import com.example.doanltm.Model.CaLam;
 import com.example.doanltm.Model.DangKy;
+import com.example.doanltm.Model.ShiftStatusMonth;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -566,6 +569,71 @@ public class DangKyDAO {
             
         } catch (SQLException e) {
             System.err.println("❌ Lỗi khi đếm lịch trình: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return 0;
+    }
+    
+    /**
+     * Lấy trạng thái ca làm cho tháng hiện tại
+     * Trả về danh sách ShiftStatusMonth, mỗi hàng là một ca làm
+     * Mỗi hàng chứa bản đồ (ngày -> số lượng đã đăng ký)
+     */
+    public List<ShiftStatusMonth> getShiftStatusForMonth(YearMonth yearMonth) {
+        List<ShiftStatusMonth> result = new ArrayList<>();
+        CaLamDAO caLamDAO = new CaLamDAO();
+        
+        // Lấy tất cả ca làm
+        List<CaLam> allShifts = caLamDAO.getAllCaLam();
+        
+        int daysInMonth = yearMonth.lengthOfMonth();
+        
+        for (CaLam caLam : allShifts) {
+            // Lấy mô tả từ time ranges (nếu cần đặt tên ca)
+            String tenCa = caLam.getMoTa() != null ? caLam.getMoTa() : "Ca " + caLam.getMaCalam();
+            
+            ShiftStatusMonth status = new ShiftStatusMonth(
+                    caLam.getMaCalam(),
+                    tenCa,
+                    caLam.getGioBatdau().toLocalTime(),
+                    caLam.getGioKetthuc().toLocalTime(),
+                    caLam.getSoLuongToiDa()
+            );
+            
+            // Lấy số lượng đã đăng ký cho từng ngày trong tháng
+            for (int day = 1; day <= daysInMonth; day++) {
+                LocalDate ngayLam = yearMonth.atDay(day);
+                int count = getSoLuongDaDangKyForDay(caLam.getMaCalam(), ngayLam);
+                status.setRegistrationCountForDay(day, count);
+            }
+            
+            result.add(status);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Đếm số người đã đăng ký cho 1 ca trong 1 ngày (không lọc trạng thái)
+     */
+    private int getSoLuongDaDangKyForDay(int maCalam, LocalDate ngayLam) {
+        String sql = "SELECT COUNT(*) FROM dangkycalam " +
+                "WHERE ma_calam = ? AND ngay_lam = ? AND trangthai != 'từ chối'";
+        
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setInt(1, maCalam);
+            pstmt.setDate(2, Date.valueOf(ngayLam));
+            
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi khi đếm số lượng đăng ký: " + e.getMessage());
             e.printStackTrace();
         }
         

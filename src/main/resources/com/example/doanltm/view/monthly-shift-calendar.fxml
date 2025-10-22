@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.doanltm.Controller.MonthlyShiftStatusCalendarController"
+      spacing="20" style="-fx-padding: 20;" styleClass="content">
+    
+    <!-- Title and Controls -->
+    <VBox spacing="12">
+        <Label text="Lịch Ca Làm Trong Tháng" styleClass="section-title" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+        <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0; -fx-padding: 10 0;">
+            <Label text="Tháng:" style="-fx-font-weight: bold;"/>
+            <DatePicker fx:id="monthPicker" promptText="Chọn tháng" style="-fx-min-width: 150;"/>
+            <Button text="🔄 Làm mới" onAction="#handleRefresh" style="-fx-padding: 8 15; -fx-font-size: 12;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="monthYearLabel" text="Tháng 10, 2025" style="-fx-font-size: 14; -fx-font-weight: bold;"/>
+        </HBox>
+    </VBox>
+    
+    <!-- Legend -->
+    <HBox spacing="20" alignment="CENTER_LEFT" style="-fx-padding: 10; -fx-border-color: #f3f4f6; -fx-border-width: 1; -fx-background-color: #f9fafb;">
+        <Label text="Chú thích:" style="-fx-font-weight: bold;"/>
+        <HBox spacing="5" alignment="CENTER_LEFT">
+            <Region style="-fx-background-color: #10b981; -fx-min-width: 20; -fx-min-height: 20; -fx-border-color: #333; -fx-border-width: 1;"/>
+            <Label text="Còn chỗ trống"/>
+        </HBox>
+        <HBox spacing="5" alignment="CENTER_LEFT">
+            <Region style="-fx-background-color: #ef4444; -fx-min-width: 20; -fx-min-height: 20; -fx-border-color: #333; -fx-border-width: 1;"/>
+            <Label text="Đã đầy"/>
+        </HBox>
+    </HBox>
+    
+    <!-- Calendar Grid -->
+    <ScrollPane fitToWidth="true" style="-fx-padding: 10;">
+        <VBox spacing="0" fx:id="calendarContainer">
+            <!-- Header Row with Day Numbers -->
+            <HBox fx:id="headerRow" spacing="0" style="-fx-border-color: #111827; -fx-border-width: 2;">
+                <Label text="Ca" style="-fx-min-width: 80; -fx-padding: 10; -fx-border-color: #111827; -fx-border-width: 0 1 0 0; -fx-alignment: CENTER; -fx-font-weight: bold; -fx-background-color: #f3f4f6;"/>
+                <!-- Day columns will be added dynamically -->
+            </HBox>
+            
+            <!-- Shift Rows -->
+            <!-- Row 1: Sáng -->
+            <HBox fx:id="row1" spacing="0" style="-fx-border-color: #111827; -fx-border-width: 1 0 0 0;">
+                <Label text="Sáng" style="-fx-min-width: 80; -fx-padding: 10; -fx-border-color: #111827; -fx-border-width: 0 1 0 0; -fx-alignment: CENTER; -fx-font-weight: bold; -fx-background-color: #f3f4f6;"/>
+                <!-- Day cells will be added dynamically -->
+            </HBox>
+            
+            <!-- Row 2: Trưa -->
+            <HBox fx:id="row2" spacing="0" style="-fx-border-color: #111827; -fx-border-width: 1 0 0 0;">
+                <Label text="Trưa" style="-fx-min-width: 80; -fx-padding: 10; -fx-border-color: #111827; -fx-border-width: 0 1 0 0; -fx-alignment: CENTER; -fx-font-weight: bold; -fx-background-color: #f3f4f6;"/>
+                <!-- Day cells will be added dynamically -->
+            </HBox>
+            
+            <!-- Row 3: Chiều -->
+            <HBox fx:id="row3" spacing="0" style="-fx-border-color: #111827; -fx-border-width: 1 0 0 0;">
+                <Label text="Chiều" style="-fx-min-width: 80; -fx-padding: 10; -fx-border-color: #111827; -fx-border-width: 0 1 0 0; -fx-alignment: CENTER; -fx-font-weight: bold; -fx-background-color: #f3f4f6;"/>
+                <!-- Day cells will be added dynamically -->
+            </HBox>
+            
+            <!-- Row 4: Tối -->
+            <HBox fx:id="row4" spacing="0" style="-fx-border-color: #111827; -fx-border-width: 1 0 0 0;">
+                <Label text="Tối" style="-fx-min-width: 80; -fx-padding: 10; -fx-border-color: #111827; -fx-border-width: 0 1 0 0; -fx-alignment: CENTER; -fx-font-weight: bold; -fx-background-color: #f3f4f6;"/>
+                <!-- Day cells will be added dynamically -->
+            </HBox>
+        </VBox>
+    </ScrollPane>
+    
+</VBox>
