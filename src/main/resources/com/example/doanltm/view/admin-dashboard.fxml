@@ -127,7 +127,7 @@
                             <Region HBox.hgrow="ALWAYS"/>
                             <VBox spacing="8" alignment="BOTTOM_RIGHT">
                                 <HBox spacing="10">
-                                    <Button text="Áp dụng" onAction="#handleApplyFilters" styleClass="modern-primary-btn"/>
+                                    <Button text="Áp dụng" onAction="#handleApplyFilters" styleClass="modern-primary-btn" textFill="white"/>
                                     <Button text="Xóa lọc" onAction="#handleClearFilters" styleClass="modern-secondary-btn"/>
                                 </HBox>
                             </VBox>

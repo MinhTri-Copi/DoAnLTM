@@ -195,27 +195,27 @@
     -fx-font-size: 18px;
 }
 
-/* Modern Stat Cards */
+/* Modern Stat Cards with Card Background */
 .modern-stat-card {
     -fx-background-color: #ffffff;
     -fx-background-radius: 12;
     -fx-padding: 20;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2);
-    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 3);
+    -fx-border-width: 2;
     -fx-border-radius: 12;
     -fx-spacing: 12;
 }
 
 .stat-primary {
-    -fx-border-color: rgba(59,130,246,0.1);
+    -fx-border-color: #3b82f6;
 }
 
 .stat-success {
-    -fx-border-color: rgba(16,185,129,0.1);
+    -fx-border-color: #10b981;
 }
 
 .stat-warning {
-    -fx-border-color: rgba(245,158,11,0.1);
+    -fx-border-color: #f59e0b;
 }
 
 .stat-icon-container {
@@ -260,19 +260,19 @@
     -fx-font-size: 11px;
 }
 
-/* Modern Filter Bar */
+/* Modern Filter Bar - Header Color */
 .modern-filter-bar {
-    -fx-background-color: #ffffff;
+    -fx-background-color: linear-gradient(to right, #4f46e5, #7c3aed);
     -fx-padding: 20;
     -fx-background-radius: 12;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 6, 0, 0, 1);
-    -fx-border-color: #e5e7eb;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2);
+    -fx-border-color: rgba(79,70,229,0.2);
     -fx-border-radius: 12;
     -fx-border-width: 1;
 }
 
 .filter-label {
-    -fx-text-fill: #374151;
+    -fx-text-fill: #ffffff;
     -fx-font-weight: bold;
     -fx-font-size: 13px;
 }
@@ -383,9 +383,10 @@
 
 .modern-table .column-header {
     -fx-font-weight: bold;
-    -fx-text-fill: #374151;
+    -fx-text-fill: #1f2937;
     -fx-font-size: 13px;
     -fx-padding: 12;
+    -fx-alignment: center-left;
 }
 
 .modern-table .table-row-cell {
@@ -432,14 +433,29 @@
 }
 
 .modern-table .danger-btn {
-    -fx-background-color: rgba(220, 38, 38, 0.1);
-    -fx-text-fill: #dc2626;
-    -fx-border-color: rgba(220, 38, 38, 0.2);
+    -fx-background-color: #10b981;
+    -fx-text-fill: white;
+    -fx-border-color: #10b981;
     -fx-border-width: 1;
     -fx-border-radius: 6;
 }
 
 .modern-table .danger-btn:hover {
+    -fx-background-color: #059669;
+    -fx-text-fill: white;
+    -fx-border-color: #059669;
+}
+
+.modern-table .reject-btn {
     -fx-background-color: #dc2626;
     -fx-text-fill: white;
+    -fx-border-color: #dc2626;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+}
+
+.modern-table .reject-btn:hover {
+    -fx-background-color: #b91c1c;
+    -fx-text-fill: white;
+    -fx-border-color: #b91c1c;
 }

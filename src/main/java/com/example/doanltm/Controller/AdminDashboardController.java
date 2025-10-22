@@ -269,12 +269,12 @@ public class AdminDashboardController {
         }
         if (colActions != null) {
             colActions.setCellFactory(col -> new TableCell<DangKy, Void>() {
-                private final Button btnApprove = new Button("Đã duyệt");
+                private final Button btnApprove = new Button("Duyệt");
                 private final Button btnReject = new Button("Từ chối");
                 private final HBox box = new HBox(8, btnApprove, btnReject);
                 {
-                    btnApprove.getStyleClass().add("primary-btn");
-                    btnReject.getStyleClass().add("danger-btn");
+                    btnApprove.getStyleClass().add("danger-btn");
+                    btnReject.getStyleClass().add("reject-btn");
                     btnApprove.setOnAction(e -> updateStatus(DangKy.TrangThai.DA_DUYET));
                     btnReject.setOnAction(e -> updateStatus(DangKy.TrangThai.TU_CHOI));
                 }
