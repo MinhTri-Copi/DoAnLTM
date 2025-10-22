@@ -169,6 +169,17 @@ public class AdminDashboardController {
             alert.showAndWait();
         }
         
+        // Đăng ký callback để nhận notification khi có đơn đăng ký mới
+        tcpClient.setNotificationCallback(notification -> {
+            System.out.println("📑 Admin nhận được notification: " + notification.getMessage());
+            Platform.runLater(() -> {
+                System.out.println("🔄 Đang refresh danh sách đợng ký...");
+                refreshRegistrations();
+                refreshStats();
+            });
+        });
+        System.out.println("📄 Admin callback đã được đăng ký");
+        
         // Defer access check to allow LoginController to set currentUser
         Platform.runLater(this::verifyAccessOrRedirect);
 

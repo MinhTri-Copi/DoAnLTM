@@ -6,6 +6,7 @@ import com.example.doanltm.Response.*;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.function.Consumer;
 
 public class TCPClientService {
     private static final String SERVER_HOST = "localhost";
@@ -15,6 +16,9 @@ public class TCPClientService {
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private boolean isConnected = false;
+    private Thread listenerThread;
+    private volatile boolean shouldListen = true;
+    private Consumer<NewRegistrationNotification> notificationCallback;
     
     /**
      * Kết nối đến server (giữ kết nối lâu dài)
@@ -32,12 +36,66 @@ public class TCPClientService {
             in = new ObjectInputStream(socket.getInputStream());
             isConnected = true;
             System.out.println("✅ Kết nối đến server thành công!");
+            // Bắt đầu listener thread để nhận notification từ server
+            startListening();
             return true;
         } catch (IOException e) {
             System.err.println("❌ Không thể kết nối đến server: " + e.getMessage());
             isConnected = false;
             return false;
         }
+    }
+    
+    /**
+     * Đăng ký callback nhận notification khi có đơn đăng ký mới
+     */
+    public void setNotificationCallback(Consumer<NewRegistrationNotification> callback) {
+        this.notificationCallback = callback;
+        System.out.println("📄 Đăng ký callback nhận notification");
+    }
+    
+    /**
+     * Bắt đầu listener thread để nhận broadcast từ server
+     */
+    private synchronized void startListening() {
+        if (listenerThread != null && listenerThread.isAlive()) {
+            return;  // Đã đang lắng nghe
+        }
+        
+        listenerThread = new Thread(() -> {
+            System.out.println("📄 Listener thread bắt đầu...");
+            while (shouldListen && isConnected) {
+                try {
+                    synchronized (in) {
+                        if (in.available() > 0) {
+                            Object obj = in.readObject();
+                            if (obj instanceof NewRegistrationNotification) {
+                                NewRegistrationNotification notification = (NewRegistrationNotification) obj;
+                                System.out.println("📑 Nhận notification: " + notification.getMessage());
+                                if (notificationCallback != null) {
+                                    notificationCallback.accept(notification);
+                                }
+                            }
+                        } else {
+                            Thread.sleep(500);  // Chờ 500ms trước khi kiểm tra lại
+                        }
+                    }
+                } catch (EOFException e) {
+                    System.out.println("📄 Connection closed by server");
+                    break;
+                } catch (IOException | ClassNotFoundException e) {
+                    if (shouldListen) {
+                        System.err.println("❌ Lỗi listener: " + e.getMessage());
+                    }
+                    break;
+                } catch (InterruptedException e) {
+                    // Ignore sleep interruption
+                }
+            }
+            System.out.println("📄 Listener thread dừng lại");
+        });
+        listenerThread.setDaemon(true);
+        listenerThread.start();
     }
     
     /**
@@ -322,5 +380,15 @@ public class TCPClientService {
      */
     public boolean isConnected() {
         return isConnected && socket != null && !socket.isClosed();
+    }
+    
+    /**
+     * Dừng listener
+     */
+    public void stopListening() {
+        shouldListen = false;
+        if (listenerThread != null) {
+            listenerThread.interrupt();
+        }
     }
 }

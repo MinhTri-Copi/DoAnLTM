@@ -10,55 +10,69 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDateTime;
+import java.sql.Timestamp;
 
 public class DangKyDAO {
     
     /**
      * Đăng ký ca làm mới (cả ca bình thường và ca gãy)
      */
+    /**
+     * Đăng ký ca làm mới (cả ca bình thường và ca gãy)
+     */
     public boolean dangKyCaLam(DangKy dangKy) {
         String sql;
-        
-        // ✅ Phân biệt SQL cho 2 loại ca
+        Timestamp currentTime = Timestamp.valueOf(LocalDateTime.now());  // ✅ FIX: Set thời gian hiện tại từ Java
+
+        // ✅ Phân biệt SQL cho 2 loại ca (bỏ NOW(), dùng ? cho thoigian_dangky)
         if (dangKy.isCaGay()) {
             // Ca gãy: ma_calam NULL, gbd_cagay và gkt_cagay có giá trị
             sql = "INSERT INTO dangkycalam (ma_nguoidung, ma_calam, thoigian_dangky, ngay_lam, gbd_cagay, gkt_cagay, trangthai) " +
-                  "VALUES (?, NULL, NOW(), ?, ?, ?, ?)";
+                    "VALUES (?, NULL, ?, ?, ?, ?, ?)";
         } else {
             // Ca bình thường: ma_calam có giá trị, gbd_cagay và gkt_cagay NULL
             sql = "INSERT INTO dangkycalam (ma_nguoidung, ma_calam, thoigian_dangky, ngay_lam, gbd_cagay, gkt_cagay, trangthai) " +
-                  "VALUES (?, ?, NOW(), ?, NULL, NULL, ?)";
+                    "VALUES (?, ?, ?, ?, NULL, NULL, ?)";
         }
-        
+
+        System.out.println("🔍 Debug SQL: " + sql);  // Log để check
+        System.out.println("🔍 Thời gian hiện tại: " + currentTime);  // Log thời gian set
+
         try (Connection conn = BDConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            
+
             pstmt.setInt(1, dangKy.getMaNguoidung());
-            
+
             if (dangKy.isCaGay()) {
                 // ✅ CA GÃY
-                pstmt.setDate(2, Date.valueOf(dangKy.getNgayLam()));
-                pstmt.setTime(3, dangKy.getGbdCagay());
-                pstmt.setTime(4, dangKy.getGktCagay());
-                pstmt.setString(5, dangKy.getTrangthai().getValue());
+                pstmt.setTimestamp(2, currentTime);  // ✅ FIX: Set thời gian hiện tại (param 2)
+                pstmt.setDate(3, Date.valueOf(dangKy.getNgayLam()));
+                pstmt.setTime(4, dangKy.getGbdCagay());
+                pstmt.setTime(5, dangKy.getGktCagay());
+                pstmt.setString(6, dangKy.getTrangthai().getValue());
             } else {
                 // ✅ CA BÌNH THƯỜNG
                 pstmt.setInt(2, dangKy.getMaCalam());
-                pstmt.setDate(3, Date.valueOf(dangKy.getNgayLam()));
-                pstmt.setString(4, dangKy.getTrangthai().getValue());
+                pstmt.setTimestamp(3, currentTime);  // ✅ FIX: Set thời gian hiện tại (param 3)
+                pstmt.setDate(4, Date.valueOf(dangKy.getNgayLam()));
+                pstmt.setString(5, dangKy.getTrangthai().getValue());
             }
-            
+
             int affectedRows = pstmt.executeUpdate();
-            
+
             if (affectedRows > 0) {
                 ResultSet rs = pstmt.getGeneratedKeys();
                 if (rs.next()) {
                     dangKy.setMaDangky(rs.getInt(1));
                 }
-                System.out.println("✅ Đăng ký ca làm thành công! Loại: " + dangKy.getLoaiCa());
+                System.out.println("✅ Đăng ký ca làm thành công! Loại: " + dangKy.getLoaiCa() +
+                        ", Thời gian đăng ký: " + currentTime);
                 return true;
+            } else {
+                System.out.println("❌ Không có row nào được insert!");
             }
-            
+
         } catch (SQLException e) {
             System.err.println("❌ Lỗi khi đăng ký ca làm: " + e.getMessage());
             System.err.println("❌ SQL State: " + e.getSQLState());
@@ -67,7 +81,7 @@ public class DangKyDAO {
             System.err.println("❌ DangKy object: " + dangKy);
             e.printStackTrace();
         }
-        
+
         return false;
     }
     

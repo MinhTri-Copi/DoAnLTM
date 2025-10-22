@@ -12,6 +12,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -23,6 +24,7 @@ public class TCPServer {
     private ExecutorService threadPool;
     private boolean isRunning = false;
     private int clientCount = 0;  // Đếm số client đang kết nối
+    private List<ClientHandler> adminClients = new ArrayList<>();  // Track tất cả admin clients
 
     public TCPServer() {
         // Sử dụng CachedThreadPool thay vì FixedThreadPool cho hiệu quả tốt hơn
@@ -92,11 +94,37 @@ public class TCPServer {
     }
     
     /**
-     * Giảm số client count khi client ngắt kết nối
+     * Giảm số client count khi client ngăt kết nối
      */
     public synchronized void decrementClientCount() {
         clientCount--;
-        System.out.println("📊 Client ngắt kết nối. Còn lại: " + clientCount + "/" + MAX_CLIENTS);
+        System.out.println("📋 Client ngăt kết nối. Còn lại: " + clientCount + "/" + MAX_CLIENTS);
+    }
+    
+    /**
+     * Thêm admin client vào danh sách quản lý
+     */
+    public synchronized void registerAdminClient(ClientHandler handler) {
+        adminClients.add(handler);
+        System.out.println("📄 Đăng ký admin client. Tổng: " + adminClients.size());
+    }
+    
+    /**
+     * Bỏ admin client khỏi danh sách
+     */
+    public synchronized void unregisterAdminClient(ClientHandler handler) {
+        adminClients.remove(handler);
+        System.out.println("📄 Bỏ admin client. Tổng: " + adminClients.size());
+    }
+    
+    /**
+     * Broadcast thông báo tới tất cả admin clients
+     */
+    public synchronized void broadcastNewRegistration(NewRegistrationNotification notification) {
+        System.out.println("📑 Broadcast thông báo: " + notification.getMessage());
+        for (ClientHandler client : adminClients) {
+            client.sendNotification(notification);
+        }
     }
 
     /**
@@ -190,6 +218,12 @@ public class TCPServer {
                     user.setMatKhau(null); // Không gửi mật khẩu về client
                     response = new LoginResponse(true, "Đăng nhập thành công!", user);
                     System.out.println("✅ Login thành công cho user: " + user.getEmail());
+                    
+                    // Register admin client for broadcasts
+                    if (user.isAdmin()) {
+                        server.registerAdminClient(this);
+                        System.out.println("📋 Admin client đăng ký cho broadcasts");
+                    }
                 } else {
                     response = new LoginResponse(false, "Email hoặc mật khẩu không đúng!");
                     System.out.println("❌ Login thất bại cho email: " + request.getEmail());
@@ -266,6 +300,11 @@ public class TCPServer {
                         if (success) {
                             response = new DangKyResponse(true, "Đăng ký ca gãy thành công!", dangKy);
                             System.out.println("✅ Đăng ký ca gãy thành công");
+                            // Broadcast thông báo tới tất cả admin
+                            NewRegistrationNotification notification = new NewRegistrationNotification(
+                                dangKy, "Có đăng ký ca gãy mới từ " + dangKy.getTenNguoiDung()
+                            );
+                            server.broadcastNewRegistration(notification);
                         } else {
                             response = new DangKyResponse(false, "Đăng ký thất bại!");
                             System.out.println("❌ Đăng ký ca gãy thất bại");
@@ -295,6 +334,11 @@ public class TCPServer {
                             if (success) {
                                 response = new DangKyResponse(true, "Đăng ký ca làm thành công!", dangKy);
                                 System.out.println("✅ Đăng ký ca bình thường thành công");
+                                // Broadcast thông báo tới tất cả admin
+                                NewRegistrationNotification notification = new NewRegistrationNotification(
+                                    dangKy, "Có đăng ký ca làm mới từ " + dangKy.getTenNguoiDung()
+                                );
+                                server.broadcastNewRegistration(notification);
                             } else {
                                 response = new DangKyResponse(false, "Đăng ký thất bại!");
                                 System.out.println("❌ Đăng ký ca bình thường thất bại");
@@ -578,8 +622,28 @@ public class TCPServer {
             }
         }
 
+        /**
+         * Gửi notification tới client
+         */
+        public void sendNotification(NewRegistrationNotification notification) {
+            try {
+                synchronized (out) {
+                    out.writeObject(notification);
+                    out.flush();
+                    System.out.println("📄 Đã gửi notification tới " + clientId);
+                }
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi gửi notification: " + e.getMessage());
+            }
+        }
+        
         private void closeConnection() {
             try {
+                // Bỏ admin client ữ danh sách nếu là admin
+                if (server != null) {
+                    server.unregisterAdminClient(this);
+                }
+                
                 if (in != null) in.close();
                 if (out != null) out.close();
                 if (clientSocket != null && !clientSocket.isClosed()) {

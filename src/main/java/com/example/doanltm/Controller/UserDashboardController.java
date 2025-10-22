@@ -393,6 +393,7 @@ public class UserDashboardController {
 
         new Thread(() -> {
             DangKy dangKy = new DangKy(currentUser.getMaNguoidung(), caLam.getMaCalam(), ngayLam);
+            dangKy.setThoigianDangky(LocalDateTime.now());  // Đặt thời gian đăng ký là thời gian hiện tại
             DangKyRequest request = new DangKyRequest(dangKy);
             DangKyResponse response = tcpClientService.dangKyCaLam(request);
 
@@ -447,6 +448,7 @@ public class UserDashboardController {
 
         new Thread(() -> {
             DangKy dangKy = new DangKy(currentUser.getMaNguoidung(), ngayLam, gioBatDau, gioKetThuc);
+            dangKy.setThoigianDangky(LocalDateTime.now());  // Đặt thời gian đăng ký là thời gian hiện tại
             DangKyRequest request = new DangKyRequest(dangKy);
             DangKyResponse response = tcpClientService.dangKyCaLam(request);
 
