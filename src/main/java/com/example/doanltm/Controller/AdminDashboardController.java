@@ -49,6 +49,12 @@ public class AdminDashboardController {
     @FXML private TableColumn<DangKy, String> colLoaiCa;
     @FXML private TableColumn<DangKy, String> colTrangThai;
     @FXML private TableColumn<DangKy, Void> colActions;
+    
+    // Pagination controls
+    @FXML private Button btnPrevPage;
+    @FXML private Button btnNextPage;
+    @FXML private Label lblPageInfo;
+    @FXML private Label lblTotalRecords;
 
     // Dynamic content container and content panes
     @FXML private StackPane contentContainer;
@@ -66,6 +72,11 @@ public class AdminDashboardController {
     private final CaLamDAO caLamDAO = new CaLamDAO();
     private final TCPClientService tcpClient = new TCPClientService();
     private final ObservableList<DangKy> registrations = FXCollections.observableArrayList();
+    
+    // Pagination state
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalRecords = 0;
 
     private User currentUser;
 
@@ -99,6 +110,14 @@ public class AdminDashboardController {
         setupRegTable();
         refreshStats();
         refreshRegistrations();
+        
+        // Force table refresh sau khi load
+        Platform.runLater(() -> {
+            if (regTable != null) {
+                regTable.refresh();
+                regTable.layout();
+            }
+        });
     }
 
     public void setCurrentUser(User user) {
@@ -163,15 +182,12 @@ public class AdminDashboardController {
         if (colActions != null) {
             colActions.setCellFactory(col -> new TableCell<DangKy, Void>() {
                 private final Button btnApprove = new Button("Đã duyệt");
-                private final Button btnPending = new Button("Chờ duyệt");
                 private final Button btnReject = new Button("Từ chối");
-                private final HBox box = new HBox(8, btnApprove, btnPending, btnReject);
+                private final HBox box = new HBox(8, btnApprove, btnReject);
                 {
                     btnApprove.getStyleClass().add("primary-btn");
-                    btnPending.getStyleClass().add("sidebar-btn");
                     btnReject.getStyleClass().add("danger-btn");
                     btnApprove.setOnAction(e -> updateStatus(DangKy.TrangThai.DA_DUYET));
-                    btnPending.setOnAction(e -> updateStatus(DangKy.TrangThai.CHO_DUYET));
                     btnReject.setOnAction(e -> updateStatus(DangKy.TrangThai.TU_CHOI));
                 }
                 private void updateStatus(DangKy.TrangThai st) {
@@ -218,6 +234,7 @@ public class AdminDashboardController {
 
     @FXML
     private void handleApplyFilters() {
+        currentPage = 1;  // Reset về trang 1 khi áp dụng filter
         refreshRegistrations();
     }
 
@@ -225,6 +242,7 @@ public class AdminDashboardController {
     private void handleClearFilters() {
         if (caFilterCombo != null) caFilterCombo.getSelectionModel().clearSelection();
         if (ngayFilterPicker != null) ngayFilterPicker.setValue(null);
+        currentPage = 1;  // Reset về trang 1
         refreshRegistrations();
     }
 
@@ -253,17 +271,23 @@ public class AdminDashboardController {
         if (caFilterCombo != null && caFilterCombo.getValue() != null) maCalam = caFilterCombo.getValue().getMaCalam();
         LocalDate ngay = ngayFilterPicker != null ? ngayFilterPicker.getValue() : null;
         
-        DanhSachDangKyAdminRequest request = new DanhSachDangKyAdminRequest(maCalam, ngay);
+        DanhSachDangKyAdminRequest request = new DanhSachDangKyAdminRequest(maCalam, ngay, currentPage, pageSize);
         DanhSachDangKyAdminResponse response = tcpClient.getDanhSachDangKyAdmin(request);
         
         if (response.isSuccess() && response.getRegistrations() != null) {
             Platform.runLater(() -> {
                 registrations.setAll(response.getRegistrations());
+                totalRecords = response.getTotalRecords();
+                updatePaginationControls();
                 if (regTable != null) regTable.refresh();
             });
         } else {
             System.err.println("Lỗi lấy danh sách đăng ký: " + response.getMessage());
-            Platform.runLater(() -> registrations.clear());
+            Platform.runLater(() -> {
+                registrations.clear();
+                totalRecords = 0;
+                updatePaginationControls();
+            });
         }
     }
 
@@ -360,6 +384,47 @@ public class AdminDashboardController {
         a.showAndWait();
     }
 
+    // Pagination methods
+    @FXML
+    private void handlePrevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            refreshRegistrations();
+        }
+    }
+    
+    @FXML
+    private void handleNextPage() {
+        int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
+        if (currentPage < totalPages) {
+            currentPage++;
+            refreshRegistrations();
+        }
+    }
+    
+    private void updatePaginationControls() {
+        int totalPages = totalRecords > 0 ? (int) Math.ceil((double) totalRecords / pageSize) : 1;
+        
+        // Cập nhật label tổng số bản ghi
+        if (lblTotalRecords != null) {
+            lblTotalRecords.setText(String.valueOf(totalRecords));
+        }
+        
+        // Cập nhật thông tin trang
+        if (lblPageInfo != null) {
+            lblPageInfo.setText("Trang " + currentPage + "/" + totalPages);
+        }
+        
+        // Enable/disable buttons
+        if (btnPrevPage != null) {
+            btnPrevPage.setDisable(currentPage <= 1);
+        }
+        
+        if (btnNextPage != null) {
+            btnNextPage.setDisable(currentPage >= totalPages || totalRecords == 0);
+        }
+    }
+    
     @FXML private void handleLogout() {
         try {
             // Ngắt kết nối TCP

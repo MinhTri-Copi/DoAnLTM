@@ -373,6 +373,7 @@
     -fx-background-color: transparent;
     -fx-background-radius: 8;
     -fx-border-radius: 8;
+    -fx-fixed-cell-size: 45;
 }
 
 .modern-table .column-header-background {

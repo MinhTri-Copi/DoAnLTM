@@ -388,28 +388,33 @@ public class TCPServer {
         }
 
         /**
-         * Xử lý danh sách đăng ký admin request
+         * Xử lý danh sách đăng ký admin request (với phân trang)
          */
         private void handleDanhSachDangKyAdminRequest(DanhSachDangKyAdminRequest request) {
             System.out.println("📥 Nhận danh sách đăng ký admin request: " + request);
 
             try {
-                List<DangKy> registrations = adminReportDAO.getRegistrations(
-                    request.getMaCalam(), request.getNgayFilter());
+                // Tính offset từ page và pageSize
+                int offset = (request.getPage() - 1) * request.getPageSize();
                 
-                // Lọc chỉ lấy các ca chưa qua ngày hiện tại
-                java.time.LocalDate today = java.time.LocalDate.now();
-                List<DangKy> filtered = registrations.stream()
-                        .filter(dk -> dk.getNgayLam() != null && !dk.getNgayLam().isBefore(today))
-                        .sorted(java.util.Comparator
-                                .comparing(DangKy::getNgayLam)
-                                .thenComparing(dk -> dk.getGbdCagay(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
-                        .collect(java.util.stream.Collectors.toList());
+                // Lấy danh sách đăng ký với phân trang
+                List<DangKy> registrations = dangKyDAO.getDanhSachDangKyAdminWithFilter(
+                    request.getMaCalam(), 
+                    request.getNgayFilter(),
+                    request.getPageSize(),
+                    offset
+                );
+                
+                // Đếm tổng số bản ghi
+                int totalRecords = dangKyDAO.countDanhSachDangKyAdmin(
+                    request.getMaCalam(),
+                    request.getNgayFilter()
+                );
 
                 DanhSachDangKyAdminResponse response = new DanhSachDangKyAdminResponse(
-                    true, "Lấy danh sách đăng ký thành công!", filtered);
+                    true, "Lấy danh sách đăng ký thành công!", registrations, totalRecords);
                 
-                System.out.println("✅ Tìm thấy " + filtered.size() + " đăng ký");
+                System.out.println("✅ Tìm thấy " + registrations.size() + "/" + totalRecords + " đăng ký (trang " + request.getPage() + ")");
 
                 out.writeObject(response);
                 out.flush();

@@ -10,6 +10,7 @@ public class DanhSachDangKyAdminResponse implements Serializable {
     private boolean success;
     private String message;
     private List<DangKy> registrations;
+    private int totalRecords;  // Tổng số bản ghi (dùng cho phân trang)
     
     public DanhSachDangKyAdminResponse() {}
     
@@ -22,6 +23,14 @@ public class DanhSachDangKyAdminResponse implements Serializable {
         this.success = success;
         this.message = message;
         this.registrations = registrations;
+        this.totalRecords = registrations != null ? registrations.size() : 0;
+    }
+    
+    public DanhSachDangKyAdminResponse(boolean success, String message, List<DangKy> registrations, int totalRecords) {
+        this.success = success;
+        this.message = message;
+        this.registrations = registrations;
+        this.totalRecords = totalRecords;
     }
     
     public boolean isSuccess() {
@@ -48,9 +57,18 @@ public class DanhSachDangKyAdminResponse implements Serializable {
         this.registrations = registrations;
     }
     
+    public int getTotalRecords() {
+        return totalRecords;
+    }
+    
+    public void setTotalRecords(int totalRecords) {
+        this.totalRecords = totalRecords;
+    }
+    
     @Override
     public String toString() {
         return "DanhSachDangKyAdminResponse{success=" + success + ", message='" + message + 
-               "', registrations=" + (registrations != null ? registrations.size() + " items" : "null") + "}";
+               "', registrations=" + (registrations != null ? registrations.size() + " items" : "null") +
+               ", totalRecords=" + totalRecords + "}";
     }
 }

@@ -280,6 +280,131 @@ public class DangKyDAO {
     }
     
     /**
+     * Lấy danh sách đăng ký cho admin với filter và phân trang
+     * - Chỉ hiển thị các đăng ký CHỜ DUYỆT
+     * - Chỉ hiển thị các đăng ký chưa quá ngày (ngày_lam >= hôm nay)
+     */
+    public List<DangKy> getDanhSachDangKyAdminWithFilter(Integer maCalam, LocalDate ngayFilter, int limit, int offset) {
+        List<DangKy> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder();
+        
+        sql.append("SELECT d.*, c.mo_ta, c.gio_batdau, c.gio_ketthuc, n.ho_ten ");
+        sql.append("FROM dangkycalam d ");
+        sql.append("LEFT JOIN calam c ON d.ma_calam = c.ma_calam ");
+        sql.append("INNER JOIN nguoidung n ON d.ma_nguoidung = n.ma_nguoidung ");
+        sql.append("WHERE d.trangthai = 'chờ duyệt' ");
+        sql.append("AND d.ngay_lam >= CURDATE() ");
+        
+        if (maCalam != null) {
+            sql.append("AND d.ma_calam = ? ");
+        }
+        
+        if (ngayFilter != null) {
+            sql.append("AND d.ngay_lam = ? ");
+        }
+        
+        sql.append("ORDER BY d.ngay_lam ASC, COALESCE(d.gbd_cagay, c.gio_batdau) ASC ");
+        sql.append("LIMIT ? OFFSET ?");
+        
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            
+            int paramIndex = 1;
+            
+            if (maCalam != null) {
+                pstmt.setInt(paramIndex++, maCalam);
+            }
+            
+            if (ngayFilter != null) {
+                pstmt.setDate(paramIndex++, Date.valueOf(ngayFilter));
+            }
+            
+            pstmt.setInt(paramIndex++, limit);
+            pstmt.setInt(paramIndex, offset);
+            
+            ResultSet rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                DangKy dangKy = new DangKy();
+                dangKy.setMaDangky(rs.getInt("ma_dangky"));
+                dangKy.setMaNguoidung(rs.getInt("ma_nguoidung"));
+                dangKy.setTenNguoiDung(rs.getString("ho_ten"));
+                
+                // Xử lý ma_calam (có thể null)
+                int maCaLamResult = rs.getInt("ma_calam");
+                if (!rs.wasNull()) {
+                    dangKy.setMaCalam(maCaLamResult);
+                    dangKy.setMoTaCaLam(rs.getString("mo_ta"));
+                    dangKy.setGbdCagay(rs.getTime("gio_batdau"));
+                    dangKy.setGktCagay(rs.getTime("gio_ketthuc"));
+                } else {
+                    dangKy.setMaCalam(null);
+                    dangKy.setMoTaCaLam("Ca gãy: " + rs.getTime("gbd_cagay") + " - " + rs.getTime("gkt_cagay"));
+                    dangKy.setGbdCagay(rs.getTime("gbd_cagay"));
+                    dangKy.setGktCagay(rs.getTime("gkt_cagay"));
+                }
+                
+                dangKy.setThoigianDangky(rs.getTimestamp("thoigian_dangky").toLocalDateTime());
+                dangKy.setNgayLam(rs.getDate("ngay_lam").toLocalDate());
+                dangKy.setTrangthai(DangKy.TrangThai.fromString(rs.getString("trangthai")));
+                
+                list.add(dangKy);
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi khi lấy danh sách đăng ký admin: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return list;
+    }
+    
+    /**
+     * Đếm tổng số đăng ký cho admin (với filter)
+     */
+    public int countDanhSachDangKyAdmin(Integer maCalam, LocalDate ngayFilter) {
+        StringBuilder sql = new StringBuilder();
+        
+        sql.append("SELECT COUNT(*) ");
+        sql.append("FROM dangkycalam d ");
+        sql.append("WHERE d.trangthai = 'chờ duyệt' ");
+        sql.append("AND d.ngay_lam >= CURDATE() ");
+        
+        if (maCalam != null) {
+            sql.append("AND d.ma_calam = ? ");
+        }
+        
+        if (ngayFilter != null) {
+            sql.append("AND d.ngay_lam = ? ");
+        }
+        
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            
+            int paramIndex = 1;
+            
+            if (maCalam != null) {
+                pstmt.setInt(paramIndex++, maCalam);
+            }
+            
+            if (ngayFilter != null) {
+                pstmt.setDate(paramIndex, Date.valueOf(ngayFilter));
+            }
+            
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi khi đếm đăng ký admin: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return 0;
+    }
+    
+    /**
      * Cập nhật trạng thái đăng ký (dành cho admin)
      */
     public boolean updateTrangThai(int maDangky, DangKy.TrangThai trangThai) {
