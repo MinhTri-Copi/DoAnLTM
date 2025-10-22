@@ -161,4 +161,108 @@ public class CaLamDAO {
 
         return list;
     }
+    
+    /**
+     * Lấy tất cả ca làm cho admin (không lọc theo ngày)
+     */
+    public List<CaLam> getAllCaLamAdmin() {
+        List<CaLam> list = new ArrayList<>();
+        String sql = "SELECT * FROM calam ORDER BY gio_batdau";
+
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                CaLam caLam = new CaLam();
+                caLam.setMaCalam(rs.getInt("ma_calam"));
+                caLam.setGioBatdau(rs.getTime("gio_batdau"));
+                caLam.setGioKetthuc(rs.getTime("gio_ketthuc"));
+                caLam.setMoTa(rs.getString("mo_ta"));
+                caLam.setSoLuongToiDa(rs.getInt("so_luong_toi_da"));
+                list.add(caLam);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi khi lấy danh sách ca làm admin: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+    
+    /**
+     * Lấy ca làm với bộ lọc tìm kiếm (cho admin)
+     */
+    public List<CaLam> getCaLamWithFilter(String searchKeyword, int limit, int offset) {
+        List<CaLam> list = new ArrayList<>();
+        String sql = "SELECT * FROM calam ";
+        
+        // Xây dựng WHERE clause nếu có tìm kiếm
+        if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+            String keyword = "%" + searchKeyword.toLowerCase() + "%";
+            sql += "WHERE LOWER(mo_ta) LIKE ? ";
+        }
+        
+        sql += "ORDER BY gio_batdau LIMIT ? OFFSET ?";
+
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            int paramIndex = 1;
+            if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+                pstmt.setString(paramIndex++, "%" + searchKeyword.toLowerCase() + "%");
+            }
+            pstmt.setInt(paramIndex++, limit);
+            pstmt.setInt(paramIndex, offset);
+            
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                CaLam caLam = new CaLam();
+                caLam.setMaCalam(rs.getInt("ma_calam"));
+                caLam.setGioBatdau(rs.getTime("gio_batdau"));
+                caLam.setGioKetthuc(rs.getTime("gio_ketthuc"));
+                caLam.setMoTa(rs.getString("mo_ta"));
+                caLam.setSoLuongToiDa(rs.getInt("so_luong_toi_da"));
+                list.add(caLam);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi khi lấy ca làm với bộ lọc: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+    
+    /**
+     * Đếm tổng số ca làm với bộ lọc tìm kiếm
+     */
+    public int countCaLamWithFilter(String searchKeyword) {
+        String sql = "SELECT COUNT(*) FROM calam ";
+        
+        if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+            sql += "WHERE LOWER(mo_ta) LIKE ?";
+        }
+
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+                pstmt.setString(1, "%" + searchKeyword.toLowerCase() + "%");
+            }
+            
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi khi đếm ca làm: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
 }

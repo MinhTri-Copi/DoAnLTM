@@ -1,6 +1,8 @@
 package com.example.doanltm.Controller;
 
 import com.example.doanltm.DAO.CaLamDAO;
+import com.example.doanltm.DAO.UserDAO;
+import com.example.doanltm.DAO.DangKyDAO;
 import com.example.doanltm.Model.CaLam;
 import com.example.doanltm.Model.DangKy;
 import com.example.doanltm.Model.User;
@@ -17,6 +19,9 @@ import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.GridPane;
+import javafx.scene.Node;
+import javafx.event.ActionEvent;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -77,6 +82,71 @@ public class AdminDashboardController {
     private int currentPage = 1;
     private int pageSize = 10;
     private int totalRecords = 0;
+    
+    // Shift Management
+    @FXML private TableView<CaLam> shiftTable;
+    @FXML private TableColumn<CaLam, Number> colShiftId;
+    @FXML private TableColumn<CaLam, String> colShiftDesc;
+    @FXML private TableColumn<CaLam, String> colShiftStart;
+    @FXML private TableColumn<CaLam, String> colShiftEnd;
+    @FXML private TableColumn<CaLam, Number> colShiftMax;
+    @FXML private TableColumn<CaLam, Void> colShiftActions;
+    @FXML private TextField tfSearchShift;
+    @FXML private Button btnAddShift;
+    @FXML private Button btnShiftPrev;
+    @FXML private Button btnShiftNext;
+    @FXML private Label lblShiftPageInfo;
+    @FXML private Label lblTotalShifts;
+    
+    private final ObservableList<CaLam> shifts = FXCollections.observableArrayList();
+    private int shiftCurrentPage = 1;
+    private int shiftPageSize = 10;
+    private int shiftTotalRecords = 0;
+    private String shiftSearchKeyword = "";
+    
+    // User Management
+    @FXML private TableView<User> userTable;
+    @FXML private TableColumn<User, Number> colUserId;
+    @FXML private TableColumn<User, String> colUserEmail;
+    @FXML private TableColumn<User, String> colUserName;
+    @FXML private TableColumn<User, String> colUserRole;
+    @FXML private TableColumn<User, Void> colUserActions;
+    @FXML private TextField tfSearchUser;
+    @FXML private Button btnAddUser;
+    @FXML private Button btnUserPrev;
+    @FXML private Button btnUserNext;
+    @FXML private Label lblUserPageInfo;
+    @FXML private Label lblTotalUsers;
+    
+    private final UserDAO userDAO = new UserDAO();
+    private final ObservableList<User> users = FXCollections.observableArrayList();
+    private int userCurrentPage = 1;
+    private int userPageSize = 10;
+    private int userTotalRecords = 0;
+    private String userSearchKeyword = "";
+    
+    // Schedule Management
+    @FXML private TableView<DangKy> scheduleTable;
+    @FXML private TableColumn<DangKy, Number> colScheduleId;
+    @FXML private TableColumn<DangKy, String> colScheduleName;
+    @FXML private TableColumn<DangKy, String> colScheduleDate;
+    @FXML private TableColumn<DangKy, String> colScheduleShift;
+    @FXML private TableColumn<DangKy, String> colScheduleTime;
+    @FXML private TableColumn<DangKy, String> colScheduleStatus;
+    @FXML private TextField tfSearchSchedule;
+    @FXML private DatePicker dpFromDate;
+    @FXML private DatePicker dpToDate;
+    @FXML private Button btnSchedulePrev;
+    @FXML private Button btnScheduleNext;
+    @FXML private Label lblSchedulePageInfo;
+    @FXML private Label lblTotalSchedules;
+    
+    private final DangKyDAO dangKyDAO = new DangKyDAO();
+    private final ObservableList<DangKy> schedules = FXCollections.observableArrayList();
+    private int scheduleCurrentPage = 1;
+    private int schedulePageSize = 10;
+    private int scheduleTotalRecords = 0;
+    private String scheduleSearchKeyword = "";
 
     private User currentUser;
 
@@ -108,14 +178,32 @@ public class AdminDashboardController {
         }
 
         setupRegTable();
+        setupShiftTable();
+        setupUserTable();
+        setupScheduleTable();
         refreshStats();
         refreshRegistrations();
+        refreshShifts();
+        refreshUsers();
+        refreshSchedules();
         
         // Force table refresh sau khi load
         Platform.runLater(() -> {
             if (regTable != null) {
                 regTable.refresh();
                 regTable.layout();
+            }
+            if (shiftTable != null) {
+                shiftTable.refresh();
+                shiftTable.layout();
+            }
+            if (userTable != null) {
+                userTable.refresh();
+                userTable.layout();
+            }
+            if (scheduleTable != null) {
+                scheduleTable.refresh();
+                scheduleTable.layout();
             }
         });
     }
@@ -438,6 +526,610 @@ public class AdminDashboardController {
         } catch (Exception e) {
             e.printStackTrace();
             showInfo("Không thể đăng xuất");
+        }
+    }
+    
+    // ============ SHIFT MANAGEMENT METHODS ============
+    
+    private void setupShiftTable() {
+        if (shiftTable == null) return;
+        shiftTable.setItems(shifts);
+        if (colShiftId != null) colShiftId.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().getMaCalam()));
+        if (colShiftDesc != null) colShiftDesc.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getMoTa()));
+        if (colShiftStart != null) colShiftStart.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(String.valueOf(c.getValue().getGioBatdau())));
+        if (colShiftEnd != null) colShiftEnd.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(String.valueOf(c.getValue().getGioKetthuc())));
+        if (colShiftMax != null) colShiftMax.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().getSoLuongToiDa()));
+        
+        if (colShiftActions != null) {
+            colShiftActions.setCellFactory(col -> new TableCell<CaLam, Void>() {
+                private final Button btnEdit = new Button("✏️");
+                private final Button btnDelete = new Button("🗑️");
+                private final HBox box = new HBox(8, btnEdit, btnDelete);
+                {
+                    btnEdit.getStyleClass().add("primary-btn");
+                    btnDelete.getStyleClass().add("danger-btn");
+                    btnEdit.setStyle("-fx-padding: 5px 15px;");
+                    btnDelete.setStyle("-fx-padding: 5px 15px;");
+                    btnEdit.setOnAction(e -> handleEditShift());
+                    btnDelete.setOnAction(e -> handleDeleteShift());
+                }
+                
+                private void handleEditShift() {
+                    CaLam item = getTableView().getItems().get(getIndex());
+                    showEditShiftDialog(item);
+                }
+                
+                private void handleDeleteShift() {
+                    CaLam item = getTableView().getItems().get(getIndex());
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, 
+                        "Xác nhận xoá ca làm '" + item.getMoTa() + "'?", ButtonType.OK, ButtonType.CANCEL);
+                    confirm.setHeaderText(null);
+                    confirm.showAndWait().ifPresent(bt -> {
+                        if (bt == ButtonType.OK) {
+                            if (caLamDAO.deleteCaLam(item.getMaCalam())) {
+                                shiftCurrentPage = 1;
+                                refreshShifts();
+                                showInfo("Xoá ca làm thành công!");
+                            } else {
+                                Alert err = new Alert(Alert.AlertType.ERROR, "Xoá ca làm thất bại!", ButtonType.OK);
+                                err.setHeaderText(null);
+                                err.showAndWait();
+                            }
+                        }
+                    });
+                }
+                
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setGraphic(empty ? null : box);
+                }
+            });
+        }
+    }
+    
+    @FXML private void handleAddShift() {
+        showAddShiftDialog();
+    }
+    
+    @FXML private void handleSearchShift() {
+        shiftSearchKeyword = tfSearchShift != null ? tfSearchShift.getText().trim() : "";
+        shiftCurrentPage = 1;
+        refreshShifts();
+    }
+    
+    @FXML private void handleShiftPrevPage() {
+        if (shiftCurrentPage > 1) {
+            shiftCurrentPage--;
+            refreshShifts();
+        }
+    }
+    
+    @FXML private void handleShiftNextPage() {
+        int totalPages = (int) Math.ceil((double) shiftTotalRecords / shiftPageSize);
+        if (shiftCurrentPage < totalPages) {
+            shiftCurrentPage++;
+            refreshShifts();
+        }
+    }
+    
+    private void refreshShifts() {
+        int offset = (shiftCurrentPage - 1) * shiftPageSize;
+        List<CaLam> shiftList = caLamDAO.getCaLamWithFilter(shiftSearchKeyword, shiftPageSize, offset);
+        shiftTotalRecords = caLamDAO.countCaLamWithFilter(shiftSearchKeyword);
+        
+        Platform.runLater(() -> {
+            shifts.setAll(shiftList);
+            updateShiftPaginationControls();
+            if (shiftTable != null) shiftTable.refresh();
+        });
+    }
+    
+    private void updateShiftPaginationControls() {
+        int totalPages = shiftTotalRecords > 0 ? (int) Math.ceil((double) shiftTotalRecords / shiftPageSize) : 1;
+        
+        if (lblTotalShifts != null) {
+            lblTotalShifts.setText(String.valueOf(shiftTotalRecords));
+        }
+        
+        if (lblShiftPageInfo != null) {
+            lblShiftPageInfo.setText("Trang " + shiftCurrentPage + "/" + totalPages);
+        }
+        
+        if (btnShiftPrev != null) {
+            btnShiftPrev.setDisable(shiftCurrentPage <= 1);
+        }
+        
+        if (btnShiftNext != null) {
+            btnShiftNext.setDisable(shiftCurrentPage >= totalPages || shiftTotalRecords == 0);
+        }
+    }
+    
+    private void showAddShiftDialog() {
+        Dialog<CaLam> dlg = new Dialog<>();
+        dlg.setTitle("Thêm Ca Làm Mới");
+        dlg.setHeaderText("Nhập thông tin ca làm");
+        
+        ButtonType btnOK = new ButtonType("Lưu", ButtonBar.ButtonData.OK_DONE);
+        dlg.getDialogPane().getButtonTypes().addAll(btnOK, ButtonType.CANCEL);
+        
+        GridPane gp = new GridPane();
+        gp.setHgap(10);
+        gp.setVgap(10);
+        gp.setPadding(new javafx.geometry.Insets(15));
+        
+        TextField tfDesc = new TextField();
+        tfDesc.setPromptText("Ví dụ: Khung sáng");
+        TextField tfStart = new TextField();
+        tfStart.setPromptText("Ví dụ: 07:00:00");
+        TextField tfEnd = new TextField();
+        tfEnd.setPromptText("Ví dụ: 11:00:00");
+        Spinner<Integer> spMax = new Spinner<>(1, 1000, 10);
+        
+        gp.addRow(0, new Label("Mô tả:"), tfDesc);
+        gp.addRow(1, new Label("Giờ bắt đầu:"), tfStart);
+        gp.addRow(2, new Label("Giờ kết thúc:"), tfEnd);
+        gp.addRow(3, new Label("Số lượng tối đa:"), spMax);
+        
+        dlg.getDialogPane().setContent(gp);
+        
+        Node okBtn = dlg.getDialogPane().lookupButton(btnOK);
+        okBtn.addEventFilter(javafx.event.ActionEvent.ACTION, ev -> {
+            try {
+                String desc = tfDesc.getText().trim();
+                if (desc.isEmpty()) throw new IllegalArgumentException("Mô tả không được để trống");
+                
+                java.time.LocalTime start = java.time.LocalTime.parse(tfStart.getText(), java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                java.time.LocalTime end = java.time.LocalTime.parse(tfEnd.getText(), java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                
+                if (!end.isAfter(start)) throw new IllegalArgumentException("Giờ kết thúc phải sau giờ bắt đầu");
+                if (spMax.getValue() <= 0) throw new IllegalArgumentException("Số lượng phải > 0");
+            } catch (Exception ex) {
+                ev.consume();
+                Alert err = new Alert(Alert.AlertType.ERROR, "Dữ liệu không hợp lệ: " + ex.getMessage(), ButtonType.OK);
+                err.setHeaderText(null);
+                err.showAndWait();
+            }
+        });
+        
+        dlg.setResultConverter(bt -> {
+            if (bt == btnOK) {
+                CaLam c = new CaLam();
+                c.setMoTa(tfDesc.getText().trim());
+                c.setGioBatdau(java.sql.Time.valueOf(java.time.LocalTime.parse(tfStart.getText(), java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))));
+                c.setGioKetthuc(java.sql.Time.valueOf(java.time.LocalTime.parse(tfEnd.getText(), java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))));
+                c.setSoLuongToiDa(spMax.getValue());
+                return c;
+            }
+            return null;
+        });
+        
+        dlg.showAndWait().ifPresent(caLam -> {
+            if (caLamDAO.insertCaLam(caLam)) {
+                shiftCurrentPage = 1;
+                refreshShifts();
+                showInfo("Thêm ca làm thành công!");
+            } else {
+                Alert err = new Alert(Alert.AlertType.ERROR, "Thêm ca làm thất bại!", ButtonType.OK);
+                err.setHeaderText(null);
+                err.showAndWait();
+            }
+        });
+    }
+    
+    private void showEditShiftDialog(CaLam caLam) {
+        Dialog<CaLam> dlg = new Dialog<>();
+        dlg.setTitle("Sửa Ca Làm");
+        dlg.setHeaderText("Cập nhật thông tin ca làm");
+        
+        ButtonType btnOK = new ButtonType("Lưu", ButtonBar.ButtonData.OK_DONE);
+        dlg.getDialogPane().getButtonTypes().addAll(btnOK, ButtonType.CANCEL);
+        
+        GridPane gp = new GridPane();
+        gp.setHgap(10);
+        gp.setVgap(10);
+        gp.setPadding(new javafx.geometry.Insets(15));
+        
+        TextField tfDesc = new TextField(caLam.getMoTa());
+        TextField tfStart = new TextField(String.valueOf(caLam.getGioBatdau()));
+        TextField tfEnd = new TextField(String.valueOf(caLam.getGioKetthuc()));
+        Spinner<Integer> spMax = new Spinner<>(1, 1000, caLam.getSoLuongToiDa());
+        
+        gp.addRow(0, new Label("Mô tả:"), tfDesc);
+        gp.addRow(1, new Label("Giờ bắt đầu:"), tfStart);
+        gp.addRow(2, new Label("Giờ kết thúc:"), tfEnd);
+        gp.addRow(3, new Label("Số lượng tối đa:"), spMax);
+        
+        dlg.getDialogPane().setContent(gp);
+        
+        Node okBtn = dlg.getDialogPane().lookupButton(btnOK);
+        okBtn.addEventFilter(javafx.event.ActionEvent.ACTION, ev -> {
+            try {
+                String desc = tfDesc.getText().trim();
+                if (desc.isEmpty()) throw new IllegalArgumentException("Mô tả không được để trống");
+                
+                java.time.LocalTime start = java.time.LocalTime.parse(tfStart.getText(), java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                java.time.LocalTime end = java.time.LocalTime.parse(tfEnd.getText(), java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                
+                if (!end.isAfter(start)) throw new IllegalArgumentException("Giờ kết thúc phải sau giờ bắt đầu");
+                if (spMax.getValue() <= 0) throw new IllegalArgumentException("Số lượng phải > 0");
+            } catch (Exception ex) {
+                ev.consume();
+                Alert err = new Alert(Alert.AlertType.ERROR, "Dữ liệu không hợp lệ: " + ex.getMessage(), ButtonType.OK);
+                err.setHeaderText(null);
+                err.showAndWait();
+            }
+        });
+        
+        dlg.setResultConverter(bt -> {
+            if (bt == btnOK) {
+                caLam.setMoTa(tfDesc.getText().trim());
+                caLam.setGioBatdau(java.sql.Time.valueOf(java.time.LocalTime.parse(tfStart.getText(), java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))));
+                caLam.setGioKetthuc(java.sql.Time.valueOf(java.time.LocalTime.parse(tfEnd.getText(), java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))));
+                caLam.setSoLuongToiDa(spMax.getValue());
+                return caLam;
+            }
+            return null;
+        });
+        
+        dlg.showAndWait().ifPresent(updated -> {
+            if (caLamDAO.updateCaLam(updated)) {
+                refreshShifts();
+                showInfo("Đập nhật ca làm thành công!");
+            } else {
+                Alert err = new Alert(Alert.AlertType.ERROR, "Đập nhật ca làm thất bại!", ButtonType.OK);
+                err.setHeaderText(null);
+                err.showAndWait();
+            }
+        });
+    }
+    
+    // ============ USER MANAGEMENT METHODS ============
+    
+    private void setupUserTable() {
+        if (userTable == null) return;
+        userTable.setItems(users);
+        if (colUserId != null) colUserId.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().getMaNguoidung()));
+        if (colUserEmail != null) colUserEmail.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getEmail()));
+        if (colUserName != null) colUserName.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getHoTen()));
+        if (colUserRole != null) colUserRole.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getTenVaitro()));
+        
+        if (colUserActions != null) {
+            colUserActions.setCellFactory(col -> new TableCell<User, Void>() {
+                private final Button btnEdit = new Button("✏️");
+                private final Button btnDelete = new Button("🗑️");
+                private final HBox box = new HBox(8, btnEdit, btnDelete);
+                {
+                    btnEdit.getStyleClass().add("primary-btn");
+                    btnDelete.getStyleClass().add("danger-btn");
+                    btnEdit.setStyle("-fx-padding: 5px 15px;");
+                    btnDelete.setStyle("-fx-padding: 5px 15px;");
+                    btnEdit.setOnAction(e -> handleEditUser());
+                    btnDelete.setOnAction(e -> handleDeleteUser());
+                }
+                
+                private void handleEditUser() {
+                    User item = getTableView().getItems().get(getIndex());
+                    showEditUserDialog(item);
+                }
+                
+                private void handleDeleteUser() {
+                    User item = getTableView().getItems().get(getIndex());
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, 
+                        "Xác nhận xoá người dùng '" + item.getHoTen() + "'?", ButtonType.OK, ButtonType.CANCEL);
+                    confirm.setHeaderText(null);
+                    confirm.showAndWait().ifPresent(bt -> {
+                        if (bt == ButtonType.OK) {
+                            if (userDAO.deleteUser(item.getMaNguoidung())) {
+                                userCurrentPage = 1;
+                                refreshUsers();
+                                showInfo("Xoá người dùng thành công!");
+                            } else {
+                                Alert err = new Alert(Alert.AlertType.ERROR, "Xoá người dùng thất bại!", ButtonType.OK);
+                                err.setHeaderText(null);
+                                err.showAndWait();
+                            }
+                        }
+                    });
+                }
+                
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setGraphic(empty ? null : box);
+                }
+            });
+        }
+    }
+    
+    @FXML private void handleAddUser() {
+        showAddUserDialog();
+    }
+    
+    @FXML private void handleSearchUser() {
+        userSearchKeyword = tfSearchUser != null ? tfSearchUser.getText().trim() : "";
+        userCurrentPage = 1;
+        refreshUsers();
+    }
+    
+    @FXML private void handleUserPrevPage() {
+        if (userCurrentPage > 1) {
+            userCurrentPage--;
+            refreshUsers();
+        }
+    }
+    
+    @FXML private void handleUserNextPage() {
+        int totalPages = (int) Math.ceil((double) userTotalRecords / userPageSize);
+        if (userCurrentPage < totalPages) {
+            userCurrentPage++;
+            refreshUsers();
+        }
+    }
+    
+    private void refreshUsers() {
+        int offset = (userCurrentPage - 1) * userPageSize;
+        List<User> userList = userDAO.getUsersWithFilter(userSearchKeyword, userPageSize, offset);
+        userTotalRecords = userDAO.countUsersWithFilter(userSearchKeyword);
+        
+        Platform.runLater(() -> {
+            users.setAll(userList);
+            updateUserPaginationControls();
+            if (userTable != null) userTable.refresh();
+        });
+    }
+    
+    private void updateUserPaginationControls() {
+        int totalPages = userTotalRecords > 0 ? (int) Math.ceil((double) userTotalRecords / userPageSize) : 1;
+        
+        if (lblTotalUsers != null) {
+            lblTotalUsers.setText(String.valueOf(userTotalRecords));
+        }
+        
+        if (lblUserPageInfo != null) {
+            lblUserPageInfo.setText("Trang " + userCurrentPage + "/" + totalPages);
+        }
+        
+        if (btnUserPrev != null) {
+            btnUserPrev.setDisable(userCurrentPage <= 1);
+        }
+        
+        if (btnUserNext != null) {
+            btnUserNext.setDisable(userCurrentPage >= totalPages || userTotalRecords == 0);
+        }
+    }
+    
+    private void showAddUserDialog() {
+        Dialog<User> dlg = new Dialog<>();
+        dlg.setTitle("Thêm Người Dùng Mới");
+        dlg.setHeaderText("Nhập thông tin người dùng");
+        
+        ButtonType btnOK = new ButtonType("Lưu", ButtonBar.ButtonData.OK_DONE);
+        dlg.getDialogPane().getButtonTypes().addAll(btnOK, ButtonType.CANCEL);
+        
+        GridPane gp = new GridPane();
+        gp.setHgap(10);
+        gp.setVgap(10);
+        gp.setPadding(new javafx.geometry.Insets(15));
+        
+        TextField tfEmail = new TextField();
+        tfEmail.setPromptText("Ví dụ: user@example.com");
+        TextField tfPassword = new TextField();
+        tfPassword.setPromptText("Ví dụ: 123456");
+        TextField tfName = new TextField();
+        tfName.setPromptText("Ví dụ: Nguyễn Văn A");
+        ComboBox<String> cbRole = new ComboBox<>();
+        cbRole.getItems().addAll("Nhân viên", "Quản lý");
+        cbRole.setValue("Nhân viên");
+        
+        gp.addRow(0, new Label("Email:"), tfEmail);
+        gp.addRow(1, new Label("Mật khẩu:"), tfPassword);
+        gp.addRow(2, new Label("Họ tên:"), tfName);
+        gp.addRow(3, new Label("Văn tỏ:"), cbRole);
+        
+        dlg.getDialogPane().setContent(gp);
+        
+        Node okBtn = dlg.getDialogPane().lookupButton(btnOK);
+        okBtn.addEventFilter(ActionEvent.ACTION, ev -> {
+            try {
+                String email = tfEmail.getText().trim();
+                if (email.isEmpty()) throw new IllegalArgumentException("Email không được để trống");
+                if (!email.contains("@")) throw new IllegalArgumentException("Email không hợp lệ");
+                
+                String password = tfPassword.getText();
+                if (password.isEmpty()) throw new IllegalArgumentException("Mật khẩu không được để trống");
+                
+                String name = tfName.getText().trim();
+                if (name.isEmpty()) throw new IllegalArgumentException("Họ tên không được để trống");
+            } catch (Exception ex) {
+                ev.consume();
+                Alert err = new Alert(Alert.AlertType.ERROR, "Dữ liệu không hợp lệ: " + ex.getMessage(), ButtonType.OK);
+                err.setHeaderText(null);
+                err.showAndWait();
+            }
+        });
+        
+        dlg.setResultConverter(bt -> {
+            if (bt == btnOK) {
+                User u = new User();
+                u.setEmail(tfEmail.getText().trim());
+                u.setMatKhau(tfPassword.getText());
+                u.setHoTen(tfName.getText().trim());
+                u.setMaVaitro(cbRole.getValue().equals("Quản lý") ? 1 : 2);
+                return u;
+            }
+            return null;
+        });
+        
+        dlg.showAndWait().ifPresent(user -> {
+            if (userDAO.insertUser(user)) {
+                userCurrentPage = 1;
+                refreshUsers();
+                showInfo("Thêm người dùng thành công!");
+            } else {
+                Alert err = new Alert(Alert.AlertType.ERROR, "Thêm người dùng thất bại!", ButtonType.OK);
+                err.setHeaderText(null);
+                err.showAndWait();
+            }
+        });
+    }
+    
+    private void showEditUserDialog(User user) {
+        Dialog<User> dlg = new Dialog<>();
+        dlg.setTitle("Sửa Thông Tin Người Dùng");
+        dlg.setHeaderText("Cập nhật thông tin");
+        
+        ButtonType btnOK = new ButtonType("Lưu", ButtonBar.ButtonData.OK_DONE);
+        dlg.getDialogPane().getButtonTypes().addAll(btnOK, ButtonType.CANCEL);
+        
+        GridPane gp = new GridPane();
+        gp.setHgap(10);
+        gp.setVgap(10);
+        gp.setPadding(new javafx.geometry.Insets(15));
+        
+        TextField tfEmail = new TextField(user.getEmail());
+        TextField tfName = new TextField(user.getHoTen());
+        ComboBox<String> cbRole = new ComboBox<>();
+        cbRole.getItems().addAll("Nhân viên", "Quản lý");
+        cbRole.setValue(user.getTenVaitro());
+        
+        gp.addRow(0, new Label("Email:"), tfEmail);
+        gp.addRow(1, new Label("Họ tên:"), tfName);
+        gp.addRow(2, new Label("Văn tỏ:"), cbRole);
+        
+        dlg.getDialogPane().setContent(gp);
+        
+        Node okBtn = dlg.getDialogPane().lookupButton(btnOK);
+        okBtn.addEventFilter(ActionEvent.ACTION, ev -> {
+            try {
+                String email = tfEmail.getText().trim();
+                if (email.isEmpty()) throw new IllegalArgumentException("Email không được để trống");
+                if (!email.contains("@")) throw new IllegalArgumentException("Email không hợp lệ");
+                
+                String name = tfName.getText().trim();
+                if (name.isEmpty()) throw new IllegalArgumentException("Họ tên không được để trống");
+            } catch (Exception ex) {
+                ev.consume();
+                Alert err = new Alert(Alert.AlertType.ERROR, "Dữ liệu không hợp lệ: " + ex.getMessage(), ButtonType.OK);
+                err.setHeaderText(null);
+                err.showAndWait();
+            }
+        });
+        
+        dlg.setResultConverter(bt -> {
+            if (bt == btnOK) {
+                user.setEmail(tfEmail.getText().trim());
+                user.setHoTen(tfName.getText().trim());
+                user.setMaVaitro(cbRole.getValue().equals("Quản lý") ? 1 : 2);
+                user.setTenVaitro(cbRole.getValue());
+                return user;
+            }
+            return null;
+        });
+        
+        dlg.showAndWait().ifPresent(updated -> {
+            if (userDAO.updateUser(updated)) {
+                refreshUsers();
+                showInfo("Đập nhật người dùng thành công!");
+            } else {
+                Alert err = new Alert(Alert.AlertType.ERROR, "Đập nhật người dùng thất bại!", ButtonType.OK);
+                err.setHeaderText(null);
+                err.showAndWait();
+            }
+        });
+    }
+    
+    // ============ SCHEDULE MANAGEMENT METHODS ============
+    
+    private void setupScheduleTable() {
+        if (scheduleTable == null) return;
+        scheduleTable.setItems(schedules);
+        if (colScheduleId != null) colScheduleId.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().getMaDangky()));
+        if (colScheduleName != null) colScheduleName.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getTenNguoiDung()));
+        if (colScheduleDate != null) colScheduleDate.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(String.valueOf(c.getValue().getNgayLam())));
+        if (colScheduleShift != null) colScheduleShift.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getMoTaCaLam()));
+        if (colScheduleTime != null) colScheduleTime.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getGbdCagay() + " - " + c.getValue().getGktCagay()));
+        if (colScheduleStatus != null) {
+            colScheduleStatus.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getTrangthai().getValue()));
+            colScheduleStatus.setCellFactory(col -> new TableCell<DangKy, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setStyle("");
+                        return;
+                    }
+                    setText(item);
+                    setStyle("-fx-alignment: CENTER; -fx-font-weight: 700;");
+                    String lower = item.toLowerCase();
+                    if (lower.contains("chờ")) {
+                        setTextFill(javafx.scene.paint.Color.web("#b45309"));
+                    } else if (lower.contains("đã")) {
+                        setTextFill(javafx.scene.paint.Color.web("#047857"));
+                    } else if (lower.contains("từ chối")) {
+                        setTextFill(javafx.scene.paint.Color.web("#b91c1c"));
+                    } else {
+                        setTextFill(javafx.scene.paint.Color.web("#111827"));
+                    }
+                }
+            });
+        }
+    }
+    
+    @FXML private void handleSearchSchedule() {
+        scheduleSearchKeyword = tfSearchSchedule != null ? tfSearchSchedule.getText().trim() : "";
+        scheduleCurrentPage = 1;
+        refreshSchedules();
+    }
+    
+    @FXML private void handleSchedulePrevPage() {
+        if (scheduleCurrentPage > 1) {
+            scheduleCurrentPage--;
+            refreshSchedules();
+        }
+    }
+    
+    @FXML private void handleScheduleNextPage() {
+        int totalPages = (int) Math.ceil((double) scheduleTotalRecords / schedulePageSize);
+        if (scheduleCurrentPage < totalPages) {
+            scheduleCurrentPage++;
+            refreshSchedules();
+        }
+    }
+    
+    private void refreshSchedules() {
+        int offset = (scheduleCurrentPage - 1) * schedulePageSize;
+        LocalDate fromDate = dpFromDate != null ? dpFromDate.getValue() : null;
+        LocalDate toDate = dpToDate != null ? dpToDate.getValue() : null;
+        
+        List<DangKy> scheduleList = dangKyDAO.getScheduleWithFilter(scheduleSearchKeyword, fromDate, toDate, schedulePageSize, offset);
+        scheduleTotalRecords = dangKyDAO.countScheduleWithFilter(scheduleSearchKeyword, fromDate, toDate);
+        
+        Platform.runLater(() -> {
+            schedules.setAll(scheduleList);
+            updateSchedulePaginationControls();
+            if (scheduleTable != null) scheduleTable.refresh();
+        });
+    }
+    
+    private void updateSchedulePaginationControls() {
+        int totalPages = scheduleTotalRecords > 0 ? (int) Math.ceil((double) scheduleTotalRecords / schedulePageSize) : 1;
+        
+        if (lblTotalSchedules != null) {
+            lblTotalSchedules.setText(String.valueOf(scheduleTotalRecords));
+        }
+        
+        if (lblSchedulePageInfo != null) {
+            lblSchedulePageInfo.setText("Trang " + scheduleCurrentPage + "/" + totalPages);
+        }
+        
+        if (btnSchedulePrev != null) {
+            btnSchedulePrev.setDisable(scheduleCurrentPage <= 1);
+        }
+        
+        if (btnScheduleNext != null) {
+            btnScheduleNext.setDisable(scheduleCurrentPage >= totalPages || scheduleTotalRecords == 0);
         }
     }
 }

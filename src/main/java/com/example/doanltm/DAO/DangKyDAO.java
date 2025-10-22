@@ -430,4 +430,145 @@ public class DangKyDAO {
         
         return false;
     }
+    
+    /**
+     * Lấy danh sách lịch trình (đăng ký) cho admin với bộ lọc
+     */
+    public List<DangKy> getScheduleWithFilter(String searchKeyword, LocalDate fromDate, LocalDate toDate, int limit, int offset) {
+        List<DangKy> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder();
+        
+        sql.append("SELECT d.*, c.mo_ta, c.gio_batdau, c.gio_ketthuc, n.ho_ten ");
+        sql.append("FROM dangkycalam d ");
+        sql.append("LEFT JOIN calam c ON d.ma_calam = c.ma_calam ");
+        sql.append("INNER JOIN nguoidung n ON d.ma_nguoidung = n.ma_nguoidung ");
+        sql.append("WHERE 1=1 ");
+        
+        if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+            sql.append("AND (LOWER(n.ho_ten) LIKE ? OR LOWER(c.mo_ta) LIKE ?) ");
+        }
+        
+        if (fromDate != null) {
+            sql.append("AND d.ngay_lam >= ? ");
+        }
+        
+        if (toDate != null) {
+            sql.append("AND d.ngay_lam <= ? ");
+        }
+        
+        sql.append("ORDER BY d.ngay_lam DESC, COALESCE(d.gbd_cagay, c.gio_batdau) ASC ");
+        sql.append("LIMIT ? OFFSET ?");
+        
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            
+            int paramIndex = 1;
+            
+            if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+                String keyword = "%" + searchKeyword.toLowerCase() + "%";
+                pstmt.setString(paramIndex++, keyword);
+                pstmt.setString(paramIndex++, keyword);
+            }
+            
+            if (fromDate != null) {
+                pstmt.setDate(paramIndex++, Date.valueOf(fromDate));
+            }
+            
+            if (toDate != null) {
+                pstmt.setDate(paramIndex++, Date.valueOf(toDate));
+            }
+            
+            pstmt.setInt(paramIndex++, limit);
+            pstmt.setInt(paramIndex, offset);
+            
+            ResultSet rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                DangKy dangKy = new DangKy();
+                dangKy.setMaDangky(rs.getInt("ma_dangky"));
+                dangKy.setMaNguoidung(rs.getInt("ma_nguoidung"));
+                dangKy.setTenNguoiDung(rs.getString("ho_ten"));
+                
+                int maCaLamResult = rs.getInt("ma_calam");
+                if (!rs.wasNull()) {
+                    dangKy.setMaCalam(maCaLamResult);
+                    dangKy.setMoTaCaLam(rs.getString("mo_ta"));
+                    dangKy.setGbdCagay(rs.getTime("gio_batdau"));
+                    dangKy.setGktCagay(rs.getTime("gio_ketthuc"));
+                } else {
+                    dangKy.setMaCalam(null);
+                    dangKy.setMoTaCaLam("Ca gãy: " + rs.getTime("gbd_cagay") + " - " + rs.getTime("gkt_cagay"));
+                    dangKy.setGbdCagay(rs.getTime("gbd_cagay"));
+                    dangKy.setGktCagay(rs.getTime("gkt_cagay"));
+                }
+                
+                dangKy.setThoigianDangky(rs.getTimestamp("thoigian_dangky").toLocalDateTime());
+                dangKy.setNgayLam(rs.getDate("ngay_lam").toLocalDate());
+                dangKy.setTrangthai(DangKy.TrangThai.fromString(rs.getString("trangthai")));
+                
+                list.add(dangKy);
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi khi lấy lịch trình: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return list;
+    }
+    
+    /**
+     * Đếm tổng số lịch trình với bộ lọc
+     */
+    public int countScheduleWithFilter(String searchKeyword, LocalDate fromDate, LocalDate toDate) {
+        StringBuilder sql = new StringBuilder();
+        
+        sql.append("SELECT COUNT(*) FROM dangkycalam d ");
+        sql.append("LEFT JOIN calam c ON d.ma_calam = c.ma_calam ");
+        sql.append("INNER JOIN nguoidung n ON d.ma_nguoidung = n.ma_nguoidung ");
+        sql.append("WHERE 1=1 ");
+        
+        if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+            sql.append("AND (LOWER(n.ho_ten) LIKE ? OR LOWER(c.mo_ta) LIKE ?) ");
+        }
+        
+        if (fromDate != null) {
+            sql.append("AND d.ngay_lam >= ? ");
+        }
+        
+        if (toDate != null) {
+            sql.append("AND d.ngay_lam <= ? ");
+        }
+        
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+            
+            int paramIndex = 1;
+            
+            if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+                String keyword = "%" + searchKeyword.toLowerCase() + "%";
+                pstmt.setString(paramIndex++, keyword);
+                pstmt.setString(paramIndex++, keyword);
+            }
+            
+            if (fromDate != null) {
+                pstmt.setDate(paramIndex++, Date.valueOf(fromDate));
+            }
+            
+            if (toDate != null) {
+                pstmt.setDate(paramIndex, Date.valueOf(toDate));
+            }
+            
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi khi đếm lịch trình: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return 0;
+    }
 }

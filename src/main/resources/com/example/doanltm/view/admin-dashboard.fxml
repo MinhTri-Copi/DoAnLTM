@@ -169,64 +169,145 @@
                 
                 <!-- Shift Management Content (Hidden by default) -->
                 <VBox fx:id="shiftManagementContent" styleClass="content" spacing="24" visible="false">
+                    <!-- Title and Add Button -->
                     <VBox spacing="16">
                         <Label text="Quản Lý Ca Làm Việc" styleClass="section-title"/>
                         <HBox styleClass="modern-filter-bar" spacing="16" alignment="CENTER_LEFT">
-                            <Button text="Thêm Ca Mới" styleClass="modern-primary-btn"/>
+                            <Button fx:id="btnAddShift" text="➕ Thêm Ca Mới" onAction="#handleAddShift" styleClass="modern-primary-btn"/>
                             <Region HBox.hgrow="ALWAYS"/>
-                            <TextField promptText="Tìm kiếm ca làm..." styleClass="modern-combo" prefWidth="200"/>
+                            <TextField fx:id="tfSearchShift" promptText="Tìm kiếm mô tả ca làm..." styleClass="modern-combo" prefWidth="250"/>
+                            <Button text="🔍" onAction="#handleSearchShift" styleClass="modern-secondary-btn" prefWidth="40"/>
                         </HBox>
                     </VBox>
                     
-                    <VBox styleClass="modern-table-container" VBox.vgrow="ALWAYS">
+                    <!-- Table Container -->
+                    <VBox styleClass="modern-table-container" VBox.vgrow="ALWAYS" spacing="12">
                         <HBox alignment="CENTER_LEFT" spacing="12" styleClass="table-header-section">
                             <Label text="Danh Sách Ca Làm" styleClass="section-title"/>
                             <Region HBox.hgrow="ALWAYS"/>
-                            <Label text="Tổng ca: 0" styleClass="table-count"/>
+                            <Label text="Tổng ca: " styleClass="table-info"/>
+                            <Label fx:id="lblTotalShifts" text="0" styleClass="table-count"/>
                         </HBox>
-                        <Label text="Giao diện quản lý ca làm sẽ được phát triển ở đây" styleClass="section-title" alignment="CENTER" VBox.vgrow="ALWAYS"/>
+                        
+                        <!-- Shifts Table -->
+                        <TableView fx:id="shiftTable" minHeight="400" prefHeight="400" styleClass="modern-table" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colShiftId" text="Mã Ca" prefWidth="70" styleClass="modern-column"/>
+                                <TableColumn fx:id="colShiftDesc" text="Mô Tả" prefWidth="200" styleClass="modern-column"/>
+                                <TableColumn fx:id="colShiftStart" text="Giờ BĐ" prefWidth="100" styleClass="modern-column"/>
+                                <TableColumn fx:id="colShiftEnd" text="Giờ KT" prefWidth="100" styleClass="modern-column"/>
+                                <TableColumn fx:id="colShiftMax" text="Tối Đa" prefWidth="80" styleClass="modern-column"/>
+                                <TableColumn fx:id="colShiftActions" text="Thao Tác" prefWidth="180" styleClass="modern-column"/>
+                            </columns>
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                        </TableView>
+                        
+                        <!-- Pagination Controls -->
+                        <HBox spacing="12" alignment="CENTER" styleClass="pagination-bar">
+                            <Button fx:id="btnShiftPrev" text="◀ Trang trước" onAction="#handleShiftPrevPage" styleClass="modern-secondary-btn"/>
+                            <Label fx:id="lblShiftPageInfo" text="Trang 1/1" styleClass="page-info"/>
+                            <Button fx:id="btnShiftNext" text="Trang sau ▶" onAction="#handleShiftNextPage" styleClass="modern-secondary-btn"/>
+                        </HBox>
                     </VBox>
                 </VBox>
                 
                 <!-- User Management Content (Hidden by default) -->
                 <VBox fx:id="userManagementContent" styleClass="content" spacing="24" visible="false">
+                    <!-- Title and Add Button -->
                     <VBox spacing="16">
                         <Label text="Quản Lý Người Dùng" styleClass="section-title"/>
                         <HBox styleClass="modern-filter-bar" spacing="16" alignment="CENTER_LEFT">
-                            <Button text="Thêm Người Dùng" styleClass="modern-primary-btn"/>
+                            <Button fx:id="btnAddUser" text="➕ Thêm Người Dùng" onAction="#handleAddUser" styleClass="modern-primary-btn"/>
                             <Region HBox.hgrow="ALWAYS"/>
-                            <TextField promptText="Tìm kiếm người dùng..." styleClass="modern-combo" prefWidth="200"/>
+                            <TextField fx:id="tfSearchUser" promptText="Tìm kiếm tên hoặc email..." styleClass="modern-combo" prefWidth="250"/>
+                            <Button text="🔍" onAction="#handleSearchUser" styleClass="modern-secondary-btn" prefWidth="40"/>
                         </HBox>
                     </VBox>
                     
-                    <VBox styleClass="modern-table-container" VBox.vgrow="ALWAYS">
+                    <!-- Table Container -->
+                    <VBox styleClass="modern-table-container" VBox.vgrow="ALWAYS" spacing="12">
                         <HBox alignment="CENTER_LEFT" spacing="12" styleClass="table-header-section">
                             <Label text="Danh Sách Người Dùng" styleClass="section-title"/>
                             <Region HBox.hgrow="ALWAYS"/>
-                            <Label text="Tổng người dùng: 0" styleClass="table-count"/>
+                            <Label text="Tổng: " styleClass="table-info"/>
+                            <Label fx:id="lblTotalUsers" text="0" styleClass="table-count"/>
                         </HBox>
-                        <Label text="Giao diện quản lý người dùng sẽ được phát triển ở đây" styleClass="section-title" alignment="CENTER" VBox.vgrow="ALWAYS"/>
+                        
+                        <!-- Users Table -->
+                        <TableView fx:id="userTable" minHeight="400" prefHeight="400" styleClass="modern-table" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colUserId" text="Mã" prefWidth="60" styleClass="modern-column"/>
+                                <TableColumn fx:id="colUserEmail" text="Email" prefWidth="200" styleClass="modern-column"/>
+                                <TableColumn fx:id="colUserName" text="Họ Tên" prefWidth="180" styleClass="modern-column"/>
+                                <TableColumn fx:id="colUserRole" text="Văn Tỏ" prefWidth="100" styleClass="modern-column"/>
+                                <TableColumn fx:id="colUserActions" text="Thao Tác" prefWidth="180" styleClass="modern-column"/>
+                            </columns>
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                        </TableView>
+                        
+                        <!-- Pagination Controls -->
+                        <HBox spacing="12" alignment="CENTER" styleClass="pagination-bar">
+                            <Button fx:id="btnUserPrev" text="◀ Trang trước" onAction="#handleUserPrevPage" styleClass="modern-secondary-btn"/>
+                            <Label fx:id="lblUserPageInfo" text="Trang 1/1" styleClass="page-info"/>
+                            <Button fx:id="btnUserNext" text="Trang sau ▶" onAction="#handleUserNextPage" styleClass="modern-secondary-btn"/>
+                        </HBox>
                     </VBox>
                 </VBox>
                 
                 <!-- Schedule Management Content (Hidden by default) -->
                 <VBox fx:id="scheduleManagementContent" styleClass="content" spacing="24" visible="false">
+                    <!-- Title and Filters -->
                     <VBox spacing="16">
                         <Label text="Quản Lý Lịch Trình" styleClass="section-title"/>
                         <HBox styleClass="modern-filter-bar" spacing="16" alignment="CENTER_LEFT">
-                            <Button text="Tạo Lịch Mới" styleClass="modern-primary-btn"/>
+                            <VBox spacing="6">
+                                <Label text="Từ ngày" styleClass="filter-label"/>
+                                <DatePicker fx:id="dpFromDate" promptText="Từ ngày" styleClass="modern-date-picker"/>
+                            </VBox>
+                            <VBox spacing="6">
+                                <Label text="Đến ngày" styleClass="filter-label"/>
+                                <DatePicker fx:id="dpToDate" promptText="Đến ngày" styleClass="modern-date-picker"/>
+                            </VBox>
                             <Region HBox.hgrow="ALWAYS"/>
-                            <DatePicker promptText="Chọn ngày" styleClass="modern-date-picker"/>
+                            <TextField fx:id="tfSearchSchedule" promptText="Tìm kiếm tên nhân viên hoặc ca làm..." styleClass="modern-combo" prefWidth="250"/>
+                            <Button text="🔍" onAction="#handleSearchSchedule" styleClass="modern-secondary-btn" prefWidth="40"/>
                         </HBox>
                     </VBox>
                     
-                    <VBox styleClass="modern-table-container" VBox.vgrow="ALWAYS">
+                    <!-- Table Container -->
+                    <VBox styleClass="modern-table-container" VBox.vgrow="ALWAYS" spacing="12">
                         <HBox alignment="CENTER_LEFT" spacing="12" styleClass="table-header-section">
-                            <Label text="Lịch Trình Tháng" styleClass="section-title"/>
+                            <Label text="Danh Sách Lịch Trình Đăng Ký" styleClass="section-title"/>
                             <Region HBox.hgrow="ALWAYS"/>
-                            <Label text="Tháng hiện tại" styleClass="table-count"/>
+                            <Label text="Tổng: " styleClass="table-info"/>
+                            <Label fx:id="lblTotalSchedules" text="0" styleClass="table-count"/>
                         </HBox>
-                        <Label text="Giao diện quản lý lịch trình sẽ được phát triển ở đây" styleClass="section-title" alignment="CENTER" VBox.vgrow="ALWAYS"/>
+                        
+                        <!-- Schedule Table -->
+                        <TableView fx:id="scheduleTable" minHeight="400" prefHeight="400" styleClass="modern-table" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colScheduleId" text="Mã" prefWidth="60" styleClass="modern-column"/>
+                                <TableColumn fx:id="colScheduleName" text="Nhân Viên" prefWidth="150" styleClass="modern-column"/>
+                                <TableColumn fx:id="colScheduleDate" text="Ngày Làm" prefWidth="120" styleClass="modern-column"/>
+                                <TableColumn fx:id="colScheduleShift" text="Ca Làm" prefWidth="180" styleClass="modern-column"/>
+                                <TableColumn fx:id="colScheduleTime" text="Thời Gian" prefWidth="140" styleClass="modern-column"/>
+                                <TableColumn fx:id="colScheduleStatus" text="Trạng Thái" prefWidth="110" styleClass="modern-column"/>
+                            </columns>
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                        </TableView>
+                        
+                        <!-- Pagination Controls -->
+                        <HBox spacing="12" alignment="CENTER" styleClass="pagination-bar">
+                            <Button fx:id="btnSchedulePrev" text="◀ Trang trước" onAction="#handleSchedulePrevPage" styleClass="modern-secondary-btn"/>
+                            <Label fx:id="lblSchedulePageInfo" text="Trang 1/1" styleClass="page-info"/>
+                            <Button fx:id="btnScheduleNext" text="Trang sau ▶" onAction="#handleScheduleNextPage" styleClass="modern-secondary-btn"/>
+                        </HBox>
                     </VBox>
                 </VBox>
                 

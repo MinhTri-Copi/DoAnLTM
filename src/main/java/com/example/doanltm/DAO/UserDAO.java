@@ -190,4 +190,79 @@ public class UserDAO {
         }
         return null;
     }
+    
+    /**
+     * Lấy danh sách user với bộ lọc tìm kiếm
+     */
+    public java.util.List<User> getUsersWithFilter(String searchKeyword, int limit, int offset) {
+        String sql = "SELECT n.ma_nguoidung, n.email, n.ho_ten, n.ma_vaitro, v.ten_vaitro " +
+                     "FROM nguoidung n " +
+                     "INNER JOIN vaitro v ON n.ma_vaitro = v.ma_vaitro ";
+        
+        // Xây dựng WHERE clause nếu có tìm kiếm
+        if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+            sql += "WHERE LOWER(n.ho_ten) LIKE ? OR LOWER(n.email) LIKE ? ";
+        }
+        
+        sql += "ORDER BY n.ma_nguoidung DESC LIMIT ? OFFSET ?";
+        
+        java.util.List<User> list = new java.util.ArrayList<>();
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            int paramIndex = 1;
+            if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+                String keyword = "%" + searchKeyword.toLowerCase() + "%";
+                ps.setString(paramIndex++, keyword);
+                ps.setString(paramIndex++, keyword);
+            }
+            ps.setInt(paramIndex++, limit);
+            ps.setInt(paramIndex, offset);
+            
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                User u = new User();
+                u.setMaNguoidung(rs.getInt("ma_nguoidung"));
+                u.setEmail(rs.getString("email"));
+                u.setHoTen(rs.getString("ho_ten"));
+                u.setMaVaitro(rs.getInt("ma_vaitro"));
+                u.setTenVaitro(rs.getString("ten_vaitro"));
+                list.add(u);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi khi lấy user với bộ lọc: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
+    }
+    
+    /**
+     * Đếm tổng số user với bộ lọc tìm kiếm
+     */
+    public int countUsersWithFilter(String searchKeyword) {
+        String sql = "SELECT COUNT(*) FROM nguoidung n ";
+        
+        if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+            sql += "WHERE LOWER(n.ho_ten) LIKE ? OR LOWER(n.email) LIKE ?";
+        }
+        
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+                String keyword = "%" + searchKeyword.toLowerCase() + "%";
+                ps.setString(1, keyword);
+                ps.setString(2, keyword);
+            }
+            
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi khi đếm user: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }

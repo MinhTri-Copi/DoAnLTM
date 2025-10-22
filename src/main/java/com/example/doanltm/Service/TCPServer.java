@@ -154,6 +154,14 @@ public class TCPServer {
                         handleDanhSachDangKyAdminRequest((DanhSachDangKyAdminRequest) request);
                     } else if (request instanceof CapNhatTrangThaiRequest) {
                         handleCapNhatTrangThaiRequest((CapNhatTrangThaiRequest) request);
+                    } else if (request instanceof GetAllCaLamAdminRequest) {
+                        handleGetAllCaLamAdminRequest((GetAllCaLamAdminRequest) request);
+                    } else if (request instanceof CreateCaLamRequest) {
+                        handleCreateCaLamRequest((CreateCaLamRequest) request);
+                    } else if (request instanceof UpdateCaLamRequest) {
+                        handleUpdateCaLamRequest((UpdateCaLamRequest) request);
+                    } else if (request instanceof DeleteCaLamRequest) {
+                        handleDeleteCaLamRequest((DeleteCaLamRequest) request);
                     } else {
                         System.out.println("⚠️ Request không xác định: " + request.getClass().getName());
                     }
@@ -450,6 +458,122 @@ public class TCPServer {
 
             } catch (IOException e) {
                 System.err.println("❌ Lỗi khi gửi response: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        /**
+         * Xử lý get all ca làm admin request
+         */
+        private void handleGetAllCaLamAdminRequest(GetAllCaLamAdminRequest request) {
+            System.out.println("📊 Nhận get all ca làm admin request: " + request);
+
+            try {
+                int offset = (request.getPage() - 1) * request.getPageSize();
+                List<CaLam> caLamList = caLamDAO.getCaLamWithFilter(
+                    request.getSearchKeyword(),
+                    request.getPageSize(),
+                    offset
+                );
+                int totalRecords = caLamDAO.countCaLamWithFilter(request.getSearchKeyword());
+
+                GetAllCaLamAdminResponse response = new GetAllCaLamAdminResponse(
+                    true, "Lấy danh sách ca làm thành công!", caLamList, totalRecords);
+                
+                System.out.println("✅ Tìm thấy " + caLamList.size() + "/" + totalRecords + " ca làm");
+
+                out.writeObject(response);
+                out.flush();
+                System.out.println("📤 Đã gỚ GetAllCaLamAdminResponse về client\n");
+
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi gỚ response: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        /**
+         * Xử lý create ca làm request
+         */
+        private void handleCreateCaLamRequest(CreateCaLamRequest request) {
+            System.out.println("📊 Nhận create ca làm request: " + request);
+
+            try {
+                CaLam caLam = request.getCaLam();
+                boolean success = caLamDAO.insertCaLam(caLam);
+
+                CreateCaLamResponse response;
+                if (success) {
+                    response = new CreateCaLamResponse(true, "Thêm ca làm thành công!");
+                    System.out.println("✅ Thêm ca làm thành công");
+                } else {
+                    response = new CreateCaLamResponse(false, "Thêm ca làm thất bại!");
+                    System.out.println("❌ Thêm ca làm thất bại");
+                }
+
+                out.writeObject(response);
+                out.flush();
+                System.out.println("📤 Đã gỚ CreateCaLamResponse về client\n");
+
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi gỚ response: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        /**
+         * Xử lý update ca làm request
+         */
+        private void handleUpdateCaLamRequest(UpdateCaLamRequest request) {
+            System.out.println("📊 Nhận update ca làm request: " + request);
+
+            try {
+                CaLam caLam = request.getCaLam();
+                boolean success = caLamDAO.updateCaLam(caLam);
+
+                UpdateCaLamResponse response;
+                if (success) {
+                    response = new UpdateCaLamResponse(true, "Cập nhật ca làm thành công!");
+                    System.out.println("✅ Cập nhật ca làm thành công");
+                } else {
+                    response = new UpdateCaLamResponse(false, "Cập nhật ca làm thất bại!");
+                    System.out.println("❌ Cập nhật ca làm thất bại");
+                }
+
+                out.writeObject(response);
+                out.flush();
+                System.out.println("📤 Đã gỚ UpdateCaLamResponse về client\n");
+
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi gỚ response: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        /**
+         * Xử lý delete ca làm request
+         */
+        private void handleDeleteCaLamRequest(DeleteCaLamRequest request) {
+            System.out.println("📊 Nhận delete ca làm request: " + request);
+
+            try {
+                boolean success = caLamDAO.deleteCaLam(request.getMaCalam());
+
+                DeleteCaLamResponse response;
+                if (success) {
+                    response = new DeleteCaLamResponse(true, "Xoá ca làm thành công!");
+                    System.out.println("✅ Xoá ca làm thành công");
+                } else {
+                    response = new DeleteCaLamResponse(false, "Xoá ca làm thất bại!");
+                    System.out.println("❌ Xoá ca làm thất bại");
+                }
+
+                out.writeObject(response);
+                out.flush();
+                System.out.println("📤 Đã gỚ DeleteCaLamResponse về client\n");
+
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi gỚ response: " + e.getMessage());
                 e.printStackTrace();
             }
         }
