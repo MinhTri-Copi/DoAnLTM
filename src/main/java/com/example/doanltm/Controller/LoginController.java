@@ -22,7 +22,13 @@ public class LoginController {
     private PasswordField passwordField;
 
     @FXML
+    private TextField passwordVisibleField;
+
+    @FXML
     private CheckBox rememberMeCheckbox;
+
+    @FXML
+    private Button togglePasswordButton;
 
     @FXML
     private Button loginButton;
@@ -42,6 +48,8 @@ public class LoginController {
         if (passwordField != null) {
             passwordField.setOnAction(event -> handleLogin());
         }
+        // Setup password toggle
+        syncPasswordFields();
     }
 
     private void checkServerConnection() {
@@ -219,6 +227,50 @@ public class LoginController {
     
     private boolean isValidEmail(String email) {
         return email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+    }
+
+    @FXML
+    private void handleTogglePassword() {
+        if (passwordField.isVisible()) {
+            // Switch to visible text field
+            String currentPassword = passwordField.getText();
+            passwordVisibleField.setText(currentPassword);
+            passwordField.setVisible(false);
+            passwordField.setManaged(false);
+            passwordVisibleField.setVisible(true);
+            passwordVisibleField.setManaged(true);
+            if (togglePasswordButton != null) {
+                togglePasswordButton.setStyle("-fx-text: '👁️'; -fx-font-size: 12;");
+            }
+        } else {
+            // Switch to password field
+            String currentPassword = passwordVisibleField.getText();
+            passwordField.setText(currentPassword);
+            passwordVisibleField.setVisible(false);
+            passwordVisibleField.setManaged(false);
+            passwordField.setVisible(true);
+            passwordField.setManaged(true);
+            if (togglePasswordButton != null) {
+                togglePasswordButton.setStyle("-fx-text: '🔒'; -fx-font-size: 12;");
+            }
+        }
+    }
+
+    private void syncPasswordFields() {
+        if (passwordField != null && passwordVisibleField != null) {
+            // Sync from hidden to visible
+            passwordField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (passwordVisibleField.isVisible()) {
+                    passwordVisibleField.setText(newVal);
+                }
+            });
+            // Sync from visible to hidden
+            passwordVisibleField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (passwordField.isVisible()) {
+                    passwordField.setText(newVal);
+                }
+            });
+        }
     }
     
     public void cleanup() {

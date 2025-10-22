@@ -74,13 +74,41 @@
                         <Font size="14.0"/>
                     </font>
                 </Label>
-                <PasswordField fx:id="passwordField" promptText="Tối thiểu 6 ký tự"
+                <PasswordField fx:id="passwordField" promptText="Tối thiểu 6 kỷ tự, 1 chữ hoa, 1 số, 1 kỷ đặc biệt"
                               style="-fx-background-radius: 5; -fx-border-radius: 5; 
-                                     -fx-border-color: #ddd; -fx-padding: 10;">
+                                     -fx-border-color: #ddd; -fx-padding: 10;" onKeyReleased="#handlePasswordValidation">
                     <font>
                         <Font size="14.0"/>
                     </font>
                 </PasswordField>
+                <!-- Password Requirements -->
+                <VBox spacing="5.0" style="-fx-border-color: #f0f0f0; -fx-border-radius: 5; -fx-padding: 10; -fx-background-color: #fafafa;">
+                    <Label text="Yêu cầu mật khẩu:" style="-fx-text-fill: #555; -fx-font-weight: bold;">
+                        <font>
+                            <Font size="12.0"/>
+                        </font>
+                    </Label>
+                    <HBox spacing="8.0">
+                        <Label fx:id="req6CharLabel" text="- Tối thiểu 6 kỷ tự" style="-fx-text-fill: #e74c3c;">
+                            <font><Font size="11.0"/></font>
+                        </Label>
+                    </HBox>
+                    <HBox spacing="8.0">
+                        <Label fx:id="reqUppercaseLabel" text="- 1 chữ hoa (A-Z)" style="-fx-text-fill: #e74c3c;">
+                            <font><Font size="11.0"/></font>
+                        </Label>
+                    </HBox>
+                    <HBox spacing="8.0">
+                        <Label fx:id="reqNumberLabel" text="- 1 số (0-9)" style="-fx-text-fill: #e74c3c;">
+                            <font><Font size="11.0"/></font>
+                        </Label>
+                    </HBox>
+                    <HBox spacing="8.0">
+                        <Label fx:id="reqSpecialLabel" text="- 1 kỷ đặc biệt (!@#$%^&amp;*)" style="-fx-text-fill: #e74c3c;">
+                            <font><Font size="11.0"/></font>
+                        </Label>
+                    </HBox>
+                </VBox>
             </VBox>
             
             <!-- Confirm Password Field -->

@@ -3,6 +3,7 @@ package com.example.doanltm.Controller;
 import com.example.doanltm.DAO.RegistrationDAO;
 import com.example.doanltm.DAO.UserDAO;
 import com.example.doanltm.Model.User;
+import com.example.doanltm.Util.PasswordHashUtil;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -23,12 +24,20 @@ public class RegisterController {
     @FXML private Button registerButton;
     @FXML private Button backToLoginButton;
 
+    @FXML private Label req6CharLabel;
+    @FXML private Label reqUppercaseLabel;
+    @FXML private Label reqNumberLabel;
+    @FXML private Label reqSpecialLabel;
+
     private final UserDAO userDAO = new UserDAO();
     private final RegistrationDAO registrationDAO = new RegistrationDAO();
 
     @FXML
     public void initialize() {
         // No initialization needed - role is defaulted to Employee
+        if (passwordField != null) {
+            passwordField.textProperty().addListener((obs, oldVal, newVal) -> handlePasswordValidation());
+        }
     }
 
     @FXML
@@ -47,8 +56,8 @@ public class RegisterController {
             showMessage("Email không hợp lệ!", true);
             return;
         }
-        if (password.length() < 6) {
-            showMessage("Mật khẩu tối thiểu 6 ký tự!", true);
+        if (!PasswordHashUtil.isPasswordStrong(password)) {
+            showMessage("Mật khẩu không đủ mạnh! Cần ít nhất 6 ký tự, 1 chữ hoa, 1 chữ số và 1 ký tự đặc biệt.", true);
             return;
         }
         if (!password.equals(confirm)) {
@@ -61,7 +70,8 @@ public class RegisterController {
         }
 
         int maVaitro = 2; // Always Employee role
-        User created = registrationDAO.createUser(fullName, email, password, maVaitro);
+        String hashedPassword = PasswordHashUtil.hashPassword(password);
+        User created = registrationDAO.createUser(fullName, email, hashedPassword, maVaitro);
         if (created != null) {
             // Luôn quay về trang đăng nhập sau khi đăng ký (kể cả Admin)
             try {
@@ -119,5 +129,32 @@ public class RegisterController {
 
     private boolean isValidEmail(String email) {
         return Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$").matcher(email).matches();
+    }
+
+    @FXML
+    private void handlePasswordValidation() {
+        String password = passwordField != null ? passwordField.getText() : "";
+        
+        boolean hasMinLength = password.length() >= 6;
+        boolean hasUppercase = password.matches(".*[A-Z].*");
+        boolean hasDigit = password.matches(".*\\d.*");
+        boolean hasSpecialChar = password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};:'\",.<>?/`~|\\\\].*");
+        
+        updateRequirementLabel(req6CharLabel, hasMinLength, "✓ Tối thiểu 6 kỷ tự", "✗ Tối thiểu 6 kỷ tự");
+        updateRequirementLabel(reqUppercaseLabel, hasUppercase, "✓ 1 chữ hoa (A-Z)", "✗ 1 chữ hoa (A-Z)");
+        updateRequirementLabel(reqNumberLabel, hasDigit, "✓ 1 số (0-9)", "✗ 1 số (0-9)");
+        updateRequirementLabel(reqSpecialLabel, hasSpecialChar, "✓ 1 kỷ đặc biệt (!@#$%^&*)", "✗ 1 kỷ đặc biệt (!@#$%^&*)");
+    }
+
+    private void updateRequirementLabel(Label label, boolean isMet, String successText, String failText) {
+        if (label != null) {
+            if (isMet) {
+                label.setStyle("-fx-text-fill: #27ae60;");
+                label.setText(successText);
+            } else {
+                label.setStyle("-fx-text-fill: #e74c3c;");
+                label.setText(failText);
+            }
+        }
     }
 }
