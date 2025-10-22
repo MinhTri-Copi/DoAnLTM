@@ -11,8 +11,10 @@ import java.util.List;
 public class AdminReportDAO {
 
     public int getMonthlyTotal(LocalDate anyDateInMonth) {
-        String sql = "SELECT COUNT(*) FROM dangkycalam WHERE YEAR(ngay_lam)=? AND MONTH(ngay_lam)=? AND trangthai != 'từ chối'";
-        System.out.println("🔍 Query Monthly Total - Year: " + anyDateInMonth.getYear() + ", Month: " + anyDateInMonth.getMonthValue());
+        String sql = "SELECT COUNT(*) FROM dangkycalam WHERE YEAR(ngay_lam)=? AND MONTH(ngay_lam)=? AND trangthai = 'đã duyệt'";
+        System.out.println("\n🔍 === getMonthlyTotal ===");
+        System.out.println("📅 Input Date: " + anyDateInMonth);
+        System.out.println("📅 Year: " + anyDateInMonth.getYear() + ", Month: " + anyDateInMonth.getMonthValue());
         try (Connection conn = BDConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, anyDateInMonth.getYear());
@@ -21,7 +23,8 @@ public class AdminReportDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     int result = rs.getInt(1);
-                    System.out.println("✅ Monthly Total Result: " + result);
+                    System.out.println("✅ Result: " + result);
+                    System.out.println("=== End getMonthlyTotal ===\n");
                     return result;
                 }
             }
@@ -71,12 +74,12 @@ public class AdminReportDAO {
     }
     
     /**
-     * Đếm số ca bình thường trong tháng (có ma_calam)
+     * Đếm số ca bình thường trong tháng (có ma_calam và trangthai = 'đã duyệt')
      */
     public int getNormalShiftsCount(LocalDate anyDateInMonth) {
         String sql = "SELECT COUNT(*) FROM dangkycalam " +
                 "WHERE YEAR(ngay_lam)=? AND MONTH(ngay_lam)=? " +
-                "AND ma_calam IS NOT NULL AND trangthai != 'từ chối'";
+                "AND ma_calam IS NOT NULL AND trangthai = 'đã duyệt'";
         try (Connection conn = BDConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, anyDateInMonth.getYear());
@@ -91,12 +94,12 @@ public class AdminReportDAO {
     }
     
     /**
-     * Đếm số ca gãy trong tháng (không có ma_calam)
+     * Đếm số ca gãy trong tháng (không có ma_calam và trangthai = 'đã duyệt')
      */
     public int getBrokenShiftsCount(LocalDate anyDateInMonth) {
         String sql = "SELECT COUNT(*) FROM dangkycalam " +
                 "WHERE YEAR(ngay_lam)=? AND MONTH(ngay_lam)=? " +
-                "AND ma_calam IS NULL AND trangthai != 'từ chối'";
+                "AND ma_calam IS NULL AND trangthai = 'đã duyệt'";
         try (Connection conn = BDConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, anyDateInMonth.getYear());

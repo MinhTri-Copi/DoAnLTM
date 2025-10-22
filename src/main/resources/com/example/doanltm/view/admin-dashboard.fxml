@@ -101,6 +101,10 @@
                         <Label text="Bộ Lọc &amp; Tìm Kiếm" styleClass="section-title"/>
                         <HBox styleClass="modern-filter-bar" spacing="16" alignment="CENTER_LEFT">
                             <VBox spacing="6">
+                                <Label text="Thống kê tháng" styleClass="filter-label"/>
+                                <DatePicker fx:id="thangThongKePicker" promptText="Chọn tháng" styleClass="modern-date-picker" onAction="#handleChangeMonth"/>
+                            </VBox>
+                            <VBox spacing="6">
                                 <Label text="Lọc theo ca làm" styleClass="filter-label"/>
                                 <ComboBox fx:id="caFilterCombo" promptText="Chọn loại ca" styleClass="modern-combo"/>
                             </VBox>
@@ -274,12 +278,12 @@
                         <!-- Schedule Table -->
                         <TableView fx:id="scheduleTable" minHeight="400" prefHeight="400" styleClass="modern-table" VBox.vgrow="ALWAYS">
                             <columns>
-                                <TableColumn fx:id="colScheduleId" text="Mã" prefWidth="60" styleClass="modern-column"/>
                                 <TableColumn fx:id="colScheduleName" text="Nhân Viên" prefWidth="150" styleClass="modern-column"/>
                                 <TableColumn fx:id="colScheduleDate" text="Ngày Làm" prefWidth="120" styleClass="modern-column"/>
                                 <TableColumn fx:id="colScheduleShift" text="Ca Làm" prefWidth="180" styleClass="modern-column"/>
                                 <TableColumn fx:id="colScheduleTime" text="Thời Gian" prefWidth="140" styleClass="modern-column"/>
                                 <TableColumn fx:id="colScheduleStatus" text="Trạng Thái" prefWidth="110" styleClass="modern-column"/>
+                                <TableColumn fx:id="colScheduleActions" text="Thao Tác" prefWidth="140" styleClass="modern-column"/>
                             </columns>
                             <columnResizePolicy>
                                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>

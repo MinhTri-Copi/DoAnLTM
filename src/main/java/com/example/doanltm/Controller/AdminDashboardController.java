@@ -131,12 +131,12 @@ public class AdminDashboardController {
     
     // Schedule Management
     @FXML private TableView<DangKy> scheduleTable;
-    @FXML private TableColumn<DangKy, Number> colScheduleId;
     @FXML private TableColumn<DangKy, String> colScheduleName;
     @FXML private TableColumn<DangKy, String> colScheduleDate;
     @FXML private TableColumn<DangKy, String> colScheduleShift;
     @FXML private TableColumn<DangKy, String> colScheduleTime;
     @FXML private TableColumn<DangKy, String> colScheduleStatus;
+    @FXML private TableColumn<DangKy, Void> colScheduleActions;
     @FXML private TextField tfSearchSchedule;
     @FXML private DatePicker dpFromDate;
     @FXML private DatePicker dpToDate;
@@ -348,16 +348,23 @@ public class AdminDashboardController {
 
     private void refreshStats() {
         LocalDate m = thangThongKePicker != null && thangThongKePicker.getValue() != null ? thangThongKePicker.getValue() : LocalDate.now();
+        System.out.println("\n📊 === refreshStats ===");
+        System.out.println("📅 Current Date: " + LocalDate.now());
+        System.out.println("📅 Picker Value: " + (thangThongKePicker != null ? thangThongKePicker.getValue() : "null"));
+        System.out.println("📅 Using Month: " + m + " (Year: " + m.getYear() + ", Month: " + m.getMonthValue() + ")");
         
         ThongKeAdminRequest request = new ThongKeAdminRequest(m);
+        System.out.println("🔍 Sending request with: " + m);
         ThongKeAdminResponse response = tcpClient.getThongKeAdmin(request);
         
         if (response.isSuccess()) {
+            System.out.println("📈 Stats Response - Total: " + response.getMonthlyTotal() + ", Normal: " + response.getNormalShiftsCount() + ", Broken: " + response.getBrokenShiftsCount());
             if (monthlyTotalLabel != null) monthlyTotalLabel.setText(String.valueOf(response.getMonthlyTotal()));
             if (normalShiftLabel != null) normalShiftLabel.setText(String.valueOf(response.getNormalShiftsCount()));
             if (brokenShiftLabel != null) brokenShiftLabel.setText(String.valueOf(response.getBrokenShiftsCount()));
+            System.out.println("=== End refreshStats ===\n");
         } else {
-            System.err.println("Lỗi lấy thống kê: " + response.getMessage());
+            System.err.println("❌ Lỗi lấy thống kê: " + response.getMessage());
         }
     }
 
@@ -1079,7 +1086,6 @@ public class AdminDashboardController {
     private void setupScheduleTable() {
         if (scheduleTable == null) return;
         scheduleTable.setItems(schedules);
-        if (colScheduleId != null) colScheduleId.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().getMaDangky()));
         if (colScheduleName != null) colScheduleName.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getTenNguoiDung()));
         if (colScheduleDate != null) colScheduleDate.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(String.valueOf(c.getValue().getNgayLam())));
         if (colScheduleShift != null) colScheduleShift.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getMoTaCaLam()));
@@ -1107,6 +1113,55 @@ public class AdminDashboardController {
                     } else {
                         setTextFill(javafx.scene.paint.Color.web("#111827"));
                     }
+                }
+            });
+        }
+        if (colScheduleActions != null) {
+            colScheduleActions.setCellFactory(col -> new TableCell<DangKy, Void>() {
+                private final Button btnEdit = new Button("✏️");
+                private final Button btnDelete = new Button("🗑️");
+                private final HBox box = new HBox(8, btnEdit, btnDelete);
+                {
+                    btnEdit.getStyleClass().add("primary-btn");
+                    btnDelete.getStyleClass().add("danger-btn");
+                    btnEdit.setStyle("-fx-padding: 5px 15px;");
+                    btnDelete.setStyle("-fx-padding: 5px 15px;");
+                    btnEdit.setOnAction(e -> handleEditSchedule());
+                    btnDelete.setOnAction(e -> handleDeleteSchedule());
+                }
+                
+                private void handleEditSchedule() {
+                    DangKy item = getTableView().getItems().get(getIndex());
+                    showEditScheduleDialog(item);
+                }
+                
+                private void handleDeleteSchedule() {
+                    DangKy item = getTableView().getItems().get(getIndex());
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, 
+                        "Xác nhận xoá lịch trình của '" + item.getTenNguoiDung() + "'?", ButtonType.OK, ButtonType.CANCEL);
+                    confirm.setHeaderText(null);
+                    confirm.showAndWait().ifPresent(bt -> {
+                        if (bt == ButtonType.OK) {
+                            HuyDangKyRequest request = new HuyDangKyRequest(item.getMaDangky(), item.getMaNguoidung());
+                            HuyDangKyResponse response = tcpClient.huyDangKy(request);
+                            
+                            if (response.isSuccess()) {
+                                scheduleCurrentPage = 1;
+                                refreshSchedules();
+                                showInfo("Xoá lịch trình thành công!");
+                            } else {
+                                Alert err = new Alert(Alert.AlertType.ERROR, response.getMessage(), ButtonType.OK);
+                                err.setHeaderText(null);
+                                err.showAndWait();
+                            }
+                        }
+                    });
+                }
+                
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setGraphic(empty ? null : box);
                 }
             });
         }
@@ -1168,6 +1223,67 @@ public class AdminDashboardController {
         if (btnScheduleNext != null) {
             btnScheduleNext.setDisable(scheduleCurrentPage >= totalPages || scheduleTotalRecords == 0);
         }
+    }
+    
+    private void showEditScheduleDialog(DangKy schedule) {
+        Dialog<DangKy> dlg = new Dialog<>();
+        dlg.setTitle("Chỉnh Sửa Lịch Trình");
+        dlg.setHeaderText("Cập nhật trạng thái đăng ký ca làm");
+        
+        ButtonType btnOK = new ButtonType("Lưu", ButtonBar.ButtonData.OK_DONE);
+        dlg.getDialogPane().getButtonTypes().addAll(btnOK, ButtonType.CANCEL);
+        
+        GridPane gp = new GridPane();
+        gp.setHgap(10);
+        gp.setVgap(10);
+        gp.setPadding(new javafx.geometry.Insets(15));
+        
+        Label lblPerson = new Label(schedule.getTenNguoiDung());
+        Label lblDate = new Label(String.valueOf(schedule.getNgayLam()));
+        Label lblShift = new Label(schedule.getMoTaCaLam());
+        Label lblTime = new Label(schedule.getGbdCagay() + " - " + schedule.getGktCagay());
+        
+        ComboBox<String> cbStatus = new ComboBox<>();
+        cbStatus.getItems().addAll("Chờ duyệt", "Đã duyệt", "Từ chối");
+        cbStatus.setValue(schedule.getTrangthai().getValue());
+        
+        gp.addRow(0, new Label("Nhân Viên:"), lblPerson);
+        gp.addRow(1, new Label("Ngày Làm:"), lblDate);
+        gp.addRow(2, new Label("Ca Làm:"), lblShift);
+        gp.addRow(3, new Label("Thời Gian:"), lblTime);
+        gp.addRow(4, new Label("Trạng Thái:"), cbStatus);
+        
+        dlg.getDialogPane().setContent(gp);
+        
+        dlg.setResultConverter(bt -> {
+            if (bt == btnOK) {
+                String selectedStatus = cbStatus.getValue();
+                if (selectedStatus.contains("Chờ")) {
+                    schedule.setTrangthai(DangKy.TrangThai.CHO_DUYET);
+                } else if (selectedStatus.contains("Đã")) {
+                    schedule.setTrangthai(DangKy.TrangThai.DA_DUYET);
+                } else if (selectedStatus.contains("Từ")) {
+                    schedule.setTrangthai(DangKy.TrangThai.TU_CHOI);
+                }
+                return schedule;
+            }
+            return null;
+        });
+        
+        dlg.showAndWait().ifPresent(updated -> {
+            CapNhatTrangThaiRequest request = new CapNhatTrangThaiRequest(updated.getMaDangky(), updated.getTrangthai());
+            CapNhatTrangThaiResponse response = tcpClient.capNhatTrangThai(request);
+            
+            if (response.isSuccess()) {
+                System.out.println("✏️  [SCHEDULE EDIT] ID: " + updated.getMaDangky() + " | Trạng Thái: " + updated.getTrangthai().getValue());
+                refreshSchedules();
+                showInfo("Cập nhật trạng thái thành công!");
+            } else {
+                Alert err = new Alert(Alert.AlertType.ERROR, response.getMessage(), ButtonType.OK);
+                err.setHeaderText(null);
+                err.showAndWait();
+            }
+        });
     }
     
     // ============ MONTHLY SHIFT STATUS METHODS ============
