@@ -1387,10 +1387,18 @@ public class AdminDashboardController implements NotificationListener {
             // Only count accepted registrations
             if (reg.getTrangthai() == DangKy.TrangThai.DA_DUYET) {
                 int day = reg.getNgayLam().getDayOfMonth();
-                String shiftName = reg.getLoaiCa();
+                String shiftName = reg.getLoaiCa(); // This is "Ca sáng", "Ca trưa", or "Ca gãy"
+                
+                // Debugging: Print shiftName and check if it exists in dayRegistrations
+                System.out.println("   [DEBUG COUNT] Processing registration for Day: " + day + ", ShiftName: " + shiftName + ", Status: " + reg.getTrangthai());
+                
                 if (dayRegistrations.containsKey(day) && dayRegistrations.get(day).containsKey(shiftName)) {
                     dayRegistrations.get(day).put(shiftName, 
                         dayRegistrations.get(day).get(shiftName) + 1);
+                    System.out.println("      [DEBUG COUNT] Incremented count for Day: " + day + ", ShiftName: " + shiftName);
+                } else {
+                    System.out.println("      [DEBUG COUNT] No matching entry in dayRegistrations for Day: " + day + ", ShiftName: " + shiftName + ". Available keys: " + dayRegistrations.get(day).keySet());
+                    // This is where the problem likely lies: shiftName from registration doesn't match keys in dayRegistrations
                 }
             }
         }

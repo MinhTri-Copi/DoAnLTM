@@ -178,12 +178,14 @@ public class DangKyDAO {
                     dangKy.setMoTaCaLam(rs.getString("mo_ta"));
                     dangKy.setGbdCagay(rs.getTime("gio_batdau"));
                     dangKy.setGktCagay(rs.getTime("gio_ketthuc"));
+                    dangKy.setLoaiCa(rs.getString("mo_ta")); // Add this line
                 } else {
                     // ✅ CA GÃY
                     dangKy.setMaCalam(null);
                     dangKy.setMoTaCaLam("Ca gãy");
                     dangKy.setGbdCagay(rs.getTime("gbd_cagay"));
                     dangKy.setGktCagay(rs.getTime("gkt_cagay"));
+                    dangKy.setLoaiCa("Ca Gãy"); // Add this line
                 }
                 
                 dangKy.setThoigianDangky(rs.getTimestamp("thoigian_dangky").toLocalDateTime());
@@ -229,6 +231,7 @@ public class DangKyDAO {
                     dangKy.setMoTaCaLam(rs.getString("mo_ta"));
                     dangKy.setGbdCagay(rs.getTime("gio_batdau"));
                     dangKy.setGktCagay(rs.getTime("gio_ketthuc"));
+                    dangKy.setLoaiCa(rs.getString("mo_ta"));
                 } else {
                     dangKy.setMaCalam(null);
                     dangKy.setMoTaCaLam("Ca gãy");
@@ -366,11 +369,13 @@ public class DangKyDAO {
                 if (!rs.wasNull()) {
                     dangKy.setMaCalam(maCaLamResult);
                     dangKy.setMoTaCaLam(rs.getString("mo_ta"));
+                    dangKy.setLoaiCa(rs.getString("mo_ta")); // Add this line
                     dangKy.setGbdCagay(rs.getTime("gio_batdau"));
                     dangKy.setGktCagay(rs.getTime("gio_ketthuc"));
                 } else {
                     dangKy.setMaCalam(null);
                     dangKy.setMoTaCaLam("Ca gãy: " + rs.getTime("gbd_cagay") + " - " + rs.getTime("gkt_cagay"));
+                    dangKy.setLoaiCa("Ca Gãy"); // Add this line
                     dangKy.setGbdCagay(rs.getTime("gbd_cagay"));
                     dangKy.setGktCagay(rs.getTime("gkt_cagay"));
                 }
@@ -525,17 +530,17 @@ public class DangKyDAO {
                 DangKy dangKy = new DangKy();
                 dangKy.setMaDangky(rs.getInt("ma_dangky"));
                 dangKy.setMaNguoidung(rs.getInt("ma_nguoidung"));
-                dangKy.setTenNguoiDung(rs.getString("ho_ten"));
-                
                 int maCaLamResult = rs.getInt("ma_calam");
                 if (!rs.wasNull()) {
                     dangKy.setMaCalam(maCaLamResult);
                     dangKy.setMoTaCaLam(rs.getString("mo_ta"));
+                    dangKy.setLoaiCa(rs.getString("mo_ta")); // Explicitly set loaiCa for regular shifts
                     dangKy.setGbdCagay(rs.getTime("gio_batdau"));
                     dangKy.setGktCagay(rs.getTime("gio_ketthuc"));
                 } else {
                     dangKy.setMaCalam(null);
                     dangKy.setMoTaCaLam("Ca gãy: " + rs.getTime("gbd_cagay") + " - " + rs.getTime("gkt_cagay"));
+                    dangKy.setLoaiCa("Ca Gãy"); // Explicitly set loaiCa for broken shifts
                     dangKy.setGbdCagay(rs.getTime("gbd_cagay"));
                     dangKy.setGktCagay(rs.getTime("gkt_cagay"));
                 }
@@ -654,7 +659,7 @@ public class DangKyDAO {
      */
     private int getSoLuongDaDangKyForDay(int maCalam, LocalDate ngayLam) {
         String sql = "SELECT COUNT(*) FROM dangkycalam " +
-                "WHERE ma_calam = ? AND ngay_lam = ? AND trangthai != 'từ chối'";
+                "WHERE ma_calam = ? AND ngay_lam = ? AND trangthai = 'đã duyệt'";
         
         try (Connection conn = BDConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -703,11 +708,13 @@ public class DangKyDAO {
                     dangKy.setMoTaCaLam(rs.getString("mo_ta"));
                     dangKy.setGbdCagay(rs.getTime("gio_batdau"));
                     dangKy.setGktCagay(rs.getTime("gio_ketthuc"));
+                    dangKy.setLoaiCa(rs.getString("mo_ta")); // Add this line
                 } else {
                     dangKy.setMaCalam(null);
                     dangKy.setMoTaCaLam("Ca gãy");
                     dangKy.setGbdCagay(rs.getTime("gbd_cagay"));
                     dangKy.setGktCagay(rs.getTime("gkt_cagay"));
+                    dangKy.setLoaiCa("Ca Gãy"); // Add this line
                 }
 
                 dangKy.setThoigianDangky(rs.getTimestamp("thoigian_dangky").toLocalDateTime());
