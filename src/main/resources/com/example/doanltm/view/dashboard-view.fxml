@@ -143,8 +143,7 @@
                         
                         <Label styleClass="form-label" text="Lọc:" />
                         <ComboBox fx:id="statusFilterCombo" onAction="#handleFilter" promptText="Tất cả trạng thái" styleClass="filter-combo" />
-                        
-                        <ComboBox fx:id="typeFilterCombo" onAction="#handleFilter" promptText="Tất cả loại ca" styleClass="filter-combo" />
+
                         
                         <Button onAction="#handleManualRefresh" styleClass="btn, btn-primary" text="🔄 Làm mới dữ liệu" />
                     </HBox>
@@ -154,8 +153,7 @@
                 <VBox styleClass="card-body" VBox.vgrow="ALWAYS">
                     <TableView fx:id="dangKyTableView" VBox.vgrow="ALWAYS" minHeight="300" prefHeight="400">
                         <columns>
-                            <TableColumn fx:id="colNgayLam" maxWidth="Infinity" minWidth="90" prefWidth="90" text="Ngày Làm" />
-                            <TableColumn fx:id="colLoaiCa" maxWidth="Infinity" minWidth="80" prefWidth="80" text="Loại Ca" />
+                            <TableColumn fx:id="colNgayLam" maxWidth="Infinity" minWidth="170" prefWidth="170" text="Ngày Làm" />
                             <TableColumn fx:id="colCaLam" maxWidth="Infinity" minWidth="120" prefWidth="150" text="Mô Tả" />
                             <TableColumn fx:id="colGioBatDau" maxWidth="Infinity" minWidth="70" prefWidth="70" text="Giờ BĐ" />
                             <TableColumn fx:id="colGioKetThuc" maxWidth="Infinity" minWidth="70" prefWidth="70" text="Giờ KT" />

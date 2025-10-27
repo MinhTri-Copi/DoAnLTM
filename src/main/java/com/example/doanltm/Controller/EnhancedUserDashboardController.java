@@ -70,12 +70,12 @@ public class EnhancedUserDashboardController implements NotificationListener {
     // Search & Filter Controls
     @FXML private TextField searchField;
     @FXML private ComboBox<String> statusFilterCombo;
-    @FXML private ComboBox<String> typeFilterCombo;
+
     
     // Table Controls
     @FXML private TableView<DangKy> dangKyTableView;
     @FXML private TableColumn<DangKy, LocalDate> colNgayLam;
-    @FXML private TableColumn<DangKy, String> colLoaiCa;
+
     @FXML private TableColumn<DangKy, String> colCaLam;
     @FXML private TableColumn<DangKy, Time> colGioBatDau;
     @FXML private TableColumn<DangKy, Time> colGioKetThuc;
@@ -205,11 +205,7 @@ public class EnhancedUserDashboardController implements NotificationListener {
             statusFilterCombo.setValue("Tất cả");
         }
         
-        // Type filter setup  
-        if (typeFilterCombo != null) {
-            typeFilterCombo.getItems().addAll("Tất cả", "Ca bình thường", "Ca gãy");
-            typeFilterCombo.setValue("Tất cả");
-        }
+
     }
 
     /**
@@ -225,11 +221,18 @@ public class EnhancedUserDashboardController implements NotificationListener {
         if (colNgayLam != null) {
             colNgayLam.setCellValueFactory(cellData -> 
                 new SimpleObjectProperty<>(cellData.getValue().getNgayLam()));
-        }
-        
-        if (colLoaiCa != null) {
-            colLoaiCa.setCellValueFactory(cellData -> 
-                new SimpleStringProperty(cellData.getValue().getLoaiCa()));
+            colNgayLam.setCellFactory(column -> new TableCell<DangKy, LocalDate>() {
+                private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                @Override
+                protected void updateItem(LocalDate item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        setText(formatter.format(item));
+                    }
+                }
+            });
         }
         
         if (colCaLam != null) {
@@ -679,14 +682,12 @@ public class EnhancedUserDashboardController implements NotificationListener {
     private void applyFilters() {
         String searchText = searchField != null ? searchField.getText().toLowerCase().trim() : "";
         String statusFilter = statusFilterCombo != null ? statusFilterCombo.getValue() : "Tất cả";
-        String typeFilter = typeFilterCombo != null ? typeFilterCombo.getValue() : "Tất cả";
         
         filteredList.setPredicate(dangKy -> {
             // Search filter
             if (!searchText.isEmpty()) {
                 String searchableText = (dangKy.getMoTaCaLam() + " " + 
-                                      dangKy.getNgayLam() + " " + 
-                                      dangKy.getLoaiCa()).toLowerCase();
+                                      dangKy.getNgayLam()).toLowerCase();
                 if (!searchableText.contains(searchText)) {
                     return false;
                 }
@@ -700,12 +701,7 @@ public class EnhancedUserDashboardController implements NotificationListener {
                 }
             }
             
-            // Type filter
-            if (!"Tất cả".equals(typeFilter)) {
-                if (!typeFilter.equals(dangKy.getLoaiCa())) {
-                    return false;
-                }
-            }
+
             
             return true;
         });
