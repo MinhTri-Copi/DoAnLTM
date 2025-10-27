@@ -1,5 +1,6 @@
 package com.example.doanltm.Util;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -17,10 +18,15 @@ public class PasswordHashUtil {
             byte[] salt = new byte[16];
             random.nextBytes(salt);
             
-            // Hash password với salt
+            // Concatenate salt and password bytes
+            byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
+            byte[] saltedPassword = new byte[salt.length + passwordBytes.length];
+            System.arraycopy(salt, 0, saltedPassword, 0, salt.length);
+            System.arraycopy(passwordBytes, 0, saltedPassword, salt.length, passwordBytes.length);
+
+            // Hash the concatenated bytes
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(salt);
-            byte[] hashedPassword = md.digest(password.getBytes());
+            byte[] hashedPassword = md.digest(saltedPassword);
             
             // Combine salt + hash
             byte[] saltAndHash = new byte[salt.length + hashedPassword.length];
@@ -46,10 +52,15 @@ public class PasswordHashUtil {
             byte[] salt = new byte[16];
             System.arraycopy(saltAndHash, 0, salt, 0, 16);
             
-            // Hash input password với same salt
+            // Concatenate salt and input password bytes
+            byte[] inputPasswordBytes = password.getBytes(StandardCharsets.UTF_8);
+            byte[] saltedInputPassword = new byte[salt.length + inputPasswordBytes.length];
+            System.arraycopy(salt, 0, saltedInputPassword, 0, salt.length);
+            System.arraycopy(inputPasswordBytes, 0, saltedInputPassword, salt.length, inputPasswordBytes.length);
+
+            // Hash the concatenated bytes
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(salt);
-            byte[] hashedInput = md.digest(password.getBytes());
+            byte[] hashedInput = md.digest(saltedInputPassword);
             
             // Compare hashes
             byte[] storedHash = new byte[saltAndHash.length - 16];

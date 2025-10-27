@@ -17,8 +17,19 @@ public class RegisterController {
 
     @FXML private TextField fullNameField;
     @FXML private TextField emailField;
-    @FXML private PasswordField passwordField;
-    @FXML private PasswordField confirmPasswordField;
+        @FXML
+        private PasswordField passwordField;
+        @FXML
+        private TextField passwordVisibleField;
+        @FXML
+        private Button togglePasswordButton;
+    
+        @FXML
+        private PasswordField confirmPasswordField;
+        @FXML
+        private TextField confirmPasswordVisibleField;
+        @FXML
+        private Button toggleConfirmPasswordButton;
     // Removed roleComboBox - default role is Employee (2)
     @FXML private Label messageLabel;
     @FXML private Button registerButton;
@@ -34,9 +45,91 @@ public class RegisterController {
 
     @FXML
     public void initialize() {
-        // No initialization needed - role is defaulted to Employee
+        setupPasswordValidationListeners();
+        syncPasswordFields();
+        syncConfirmPasswordFields();
+    }
+
+    private void setupPasswordValidationListeners() {
         if (passwordField != null) {
             passwordField.textProperty().addListener((obs, oldVal, newVal) -> handlePasswordValidation());
+        }
+        if (passwordVisibleField != null) {
+            passwordVisibleField.textProperty().addListener((obs, oldVal, newVal) -> handlePasswordValidation());
+        }
+        if (confirmPasswordField != null) {
+            confirmPasswordField.textProperty().addListener((obs, oldVal, newVal) -> handlePasswordValidation());
+        }
+        if (confirmPasswordVisibleField != null) {
+            confirmPasswordVisibleField.textProperty().addListener((obs, oldVal, newVal) -> handlePasswordValidation());
+        }
+    }
+
+    @FXML
+    public void handleTogglePassword() {
+        if (passwordField.isVisible()) {
+            passwordVisibleField.setText(passwordField.getText());
+            passwordField.setVisible(false);
+            passwordField.setManaged(false);
+            passwordVisibleField.setVisible(true);
+            passwordVisibleField.setManaged(true);
+            togglePasswordButton.setText("🔒");
+        } else {
+            passwordField.setText(passwordVisibleField.getText());
+            passwordVisibleField.setVisible(false);
+            passwordVisibleField.setManaged(false);
+            passwordField.setVisible(true);
+            passwordField.setManaged(true);
+            togglePasswordButton.setText("👁️");
+        }
+    }
+
+    @FXML
+    public void handleToggleConfirmPassword() {
+        if (confirmPasswordField.isVisible()) {
+            confirmPasswordVisibleField.setText(confirmPasswordField.getText());
+            confirmPasswordField.setVisible(false);
+            confirmPasswordField.setManaged(false);
+            confirmPasswordVisibleField.setVisible(true);
+            confirmPasswordVisibleField.setManaged(true);
+            toggleConfirmPasswordButton.setText("🔒");
+        } else {
+            confirmPasswordField.setText(confirmPasswordVisibleField.getText());
+            confirmPasswordVisibleField.setVisible(false);
+            confirmPasswordVisibleField.setManaged(false);
+            confirmPasswordField.setVisible(true);
+            confirmPasswordField.setManaged(true);
+            toggleConfirmPasswordButton.setText("👁️");
+        }
+    }
+
+    private void syncPasswordFields() {
+        if (passwordField != null && passwordVisibleField != null) {
+            passwordField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (passwordVisibleField.isVisible()) {
+                    passwordVisibleField.setText(newVal);
+                }
+            });
+            passwordVisibleField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (passwordField.isVisible()) {
+                    passwordField.setText(newVal);
+                }
+            });
+        }
+    }
+
+    private void syncConfirmPasswordFields() {
+        if (confirmPasswordField != null && confirmPasswordVisibleField != null) {
+            confirmPasswordField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (confirmPasswordVisibleField.isVisible()) {
+                    confirmPasswordVisibleField.setText(newVal);
+                }
+            });
+            confirmPasswordVisibleField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (confirmPasswordField.isVisible()) {
+                    confirmPasswordField.setText(newVal);
+                }
+            });
         }
     }
 
@@ -44,8 +137,8 @@ public class RegisterController {
     private void handleRegister() {
         String fullName = getText(fullNameField);
         String email = getText(emailField);
-        String password = passwordField != null ? passwordField.getText() : "";
-        String confirm = confirmPasswordField != null ? confirmPasswordField.getText() : "";
+        String password = passwordField.isVisible() ? passwordField.getText() : passwordVisibleField.getText();
+        String confirm = confirmPasswordField.isVisible() ? confirmPasswordField.getText() : confirmPasswordVisibleField.getText();
         // Default role is Employee (2)
 
         if (fullName.isEmpty() || email.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
@@ -136,17 +229,26 @@ public class RegisterController {
 
     @FXML
     private void handlePasswordValidation() {
-        String password = passwordField != null ? passwordField.getText() : "";
+        String password = passwordField.isVisible() ? passwordField.getText() : passwordVisibleField.getText();
         
         boolean hasMinLength = password.length() >= 6;
         boolean hasUppercase = password.matches(".*[A-Z].*");
         boolean hasDigit = password.matches(".*\\d.*");
-        boolean hasSpecialChar = password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};:'\",.<>?/`~|\\\\].*");
+//                   Cần hai dấu gạch chéo ngược
+        // Check for special characters without complex regex escaping
+        boolean hasSpecialChar = false;
+        String specialChars = "!@#$%";
+        for (char c : password.toCharArray()) {
+            if (specialChars.indexOf(c) >= 0) {
+                hasSpecialChar = true;
+                break;
+            }
+        }
         
         updateRequirementLabel(req6CharLabel, hasMinLength, "✓ Tối thiểu 6 kỷ tự", "✗ Tối thiểu 6 kỷ tự");
         updateRequirementLabel(reqUppercaseLabel, hasUppercase, "✓ 1 chữ hoa (A-Z)", "✗ 1 chữ hoa (A-Z)");
         updateRequirementLabel(reqNumberLabel, hasDigit, "✓ 1 số (0-9)", "✗ 1 số (0-9)");
-        updateRequirementLabel(reqSpecialLabel, hasSpecialChar, "✓ 1 kỷ đặc biệt (!@#$%^&*)", "✗ 1 kỷ đặc biệt (!@#$%^&*)");
+        updateRequirementLabel(reqSpecialLabel, hasSpecialChar, "✓ 1 kỷ đặc biệt (!@#$%^&*...)", "✗ 1 kỷ đặc biệt (!@#$%^&*...)");
     }
 
     private void updateRequirementLabel(Label label, boolean isMet, String successText, String failText) {

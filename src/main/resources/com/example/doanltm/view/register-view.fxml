@@ -74,13 +74,24 @@
                         <Font size="14.0"/>
                     </font>
                 </Label>
-                <PasswordField fx:id="passwordField" promptText="Tối thiểu 6 kỷ tự, 1 chữ hoa, 1 số, 1 kỷ đặc biệt"
-                              style="-fx-background-radius: 5; -fx-border-radius: 5; 
-                                     -fx-border-color: #ddd; -fx-padding: 10;" onKeyReleased="#handlePasswordValidation">
-                    <font>
-                        <Font size="14.0"/>
-                    </font>
-                </PasswordField>
+                <HBox spacing="5">
+                    <PasswordField fx:id="passwordField" promptText="Tối thiểu 6 kỷ tự, 1 chữ hoa, 1 số, 1 kỷ đặc biệt"
+                                  style="-fx-background-radius: 5; -fx-border-radius: 5; 
+                                         -fx-border-color: #ddd; -fx-padding: 10;" onKeyReleased="#handlePasswordValidation" HBox.hgrow="ALWAYS">
+                        <font>
+                            <Font size="14.0"/>
+                        </font>
+                    </PasswordField>
+                    <TextField fx:id="passwordVisibleField" promptText="Tối thiểu 6 kỷ tự, 1 chữ hoa, 1 số, 1 kỷ đặc biệt"
+                               visible="false" managed="false"
+                               style="-fx-background-radius: 5; -fx-border-radius: 5; 
+                                      -fx-border-color: #ddd; -fx-padding: 10;" HBox.hgrow="ALWAYS" onKeyReleased="#handlePasswordValidation">
+                        <font>
+                            <Font size="14.0"/>
+                        </font>
+                    </TextField>
+                    <Button fx:id="togglePasswordButton" text="👁️" onAction="#handleTogglePassword" style="-fx-background-color: #ecf0f1; -fx-text-fill: #34495e; -fx-font-size: 16; -fx-background-radius: 5;"/>
+                </HBox>
                 <!-- Password Requirements -->
                 <VBox spacing="5.0" style="-fx-border-color: #f0f0f0; -fx-border-radius: 5; -fx-padding: 10; -fx-background-color: #fafafa;">
                     <Label text="Yêu cầu mật khẩu:" style="-fx-text-fill: #555; -fx-font-weight: bold;">
@@ -118,13 +129,24 @@
                         <Font size="14.0"/>
                     </font>
                 </Label>
-                <PasswordField fx:id="confirmPasswordField" promptText="Nhập lại mật khẩu"
-                              style="-fx-background-radius: 5; -fx-border-radius: 5; 
-                                     -fx-border-color: #ddd; -fx-padding: 10;">
-                    <font>
-                        <Font size="14.0"/>
-                    </font>
-                </PasswordField>
+                <HBox spacing="5">
+                    <PasswordField fx:id="confirmPasswordField" promptText="Nhập lại mật khẩu"
+                                  style="-fx-background-radius: 5; -fx-border-radius: 5; 
+                                         -fx-border-color: #ddd; -fx-padding: 10;" HBox.hgrow="ALWAYS">
+                        <font>
+                            <Font size="14.0"/>
+                        </font>
+                    </PasswordField>
+                    <TextField fx:id="confirmPasswordVisibleField" promptText="Nhập lại mật khẩu"
+                               visible="false" managed="false"
+                               style="-fx-background-radius: 5; -fx-border-radius: 5; 
+                                      -fx-border-color: #ddd; -fx-padding: 10;" HBox.hgrow="ALWAYS">
+                        <font>
+                            <Font size="14.0"/>
+                        </font>
+                    </TextField>
+                    <Button fx:id="toggleConfirmPasswordButton" text="👁️" onAction="#handleToggleConfirmPassword" style="-fx-background-color: #ecf0f1; -fx-text-fill: #34495e; -fx-font-size: 16; -fx-background-radius: 5;"/>
+                </HBox>
             </VBox>
             
             <!-- Error/Success Label -->

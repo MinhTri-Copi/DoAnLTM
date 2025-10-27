@@ -2,11 +2,13 @@ package com.example.doanltm.DAO;
 
 import com.example.doanltm.Database.BDConnection;
 import com.example.doanltm.Model.User;
+import com.example.doanltm.Util.PasswordHashUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 
 public class UserDAO {
     
@@ -88,11 +90,11 @@ public class UserDAO {
     /**
      * Xác thực người dùng với email và mật khẩu
      */
-    public User authenticate(String email, String matKhau) {
-        String sql = "SELECT n.ma_nguoidung, n.email, n.ho_ten, n.ma_vaitro, v.ten_vaitro " +
+    public User authenticate(String email, String plainTextPassword) {
+        String sql = "SELECT n.ma_nguoidung, n.email, n.mat_khau, n.ho_ten, n.ma_vaitro, v.ten_vaitro " +
                      "FROM nguoidung n " +
                      "INNER JOIN vaitro v ON n.ma_vaitro = v.ma_vaitro " +
-                     "WHERE n.email = ? AND n.mat_khau = ?";
+                     "WHERE n.email = ?";
         
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -102,20 +104,27 @@ public class UserDAO {
             conn = BDConnection.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, email);
-            pstmt.setString(2, matKhau); // TODO: Nên mã hóa mật khẩu (MD5, SHA-256, BCrypt)
             
             rs = pstmt.executeQuery();
             
             if (rs.next()) {
-                User user = new User();
-                user.setMaNguoidung(rs.getInt("ma_nguoidung"));
-                user.setEmail(rs.getString("email"));
-                user.setHoTen(rs.getString("ho_ten"));
-                user.setMaVaitro(rs.getInt("ma_vaitro"));
-                user.setTenVaitro(rs.getString("ten_vaitro"));
+                String storedHashedPassword = rs.getString("mat_khau");
                 
-                System.out.println("✅ Tìm thấy user: " + user);
-                return user;
+                // Use PasswordHashUtil to verify the password
+                if (PasswordHashUtil.verifyPassword(plainTextPassword, storedHashedPassword)) {
+                    User user = new User();
+                    user.setMaNguoidung(rs.getInt("ma_nguoidung"));
+                    user.setEmail(rs.getString("email"));
+                    user.setHoTen(rs.getString("ho_ten"));
+                    user.setMaVaitro(rs.getInt("ma_vaitro"));
+                    user.setTenVaitro(rs.getString("ten_vaitro"));
+                    
+                    System.out.println("✅ Xác thực thành công cho user: " + user.getEmail());
+                    return user;
+                } else {
+                    System.out.println("❌ Mật khẩu không đúng cho email: " + email);
+                    return null;
+                }
             } else {
                 System.out.println("❌ Không tìm thấy user với email: " + email);
                 return null;
