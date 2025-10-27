@@ -501,13 +501,15 @@ public class TCPServer {
                 List<DangKy> registrations = dangKyDAO.getDanhSachDangKyAdminWithFilter(
                     request.getMaCalam(),
                     request.getNgayFilter(),
+                    request.getStatusFilter(),
                     request.getPageSize(),
                     offset
                 );
 
                 int totalRecords = dangKyDAO.countDanhSachDangKyAdmin(
                     request.getMaCalam(),
-                    request.getNgayFilter()
+                    request.getNgayFilter(),
+                    request.getStatusFilter()
                 );
 
                 DanhSachDangKyAdminResponse response = new DanhSachDangKyAdminResponse(

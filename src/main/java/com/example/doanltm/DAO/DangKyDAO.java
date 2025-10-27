@@ -308,7 +308,7 @@ public class DangKyDAO {
      * - Chỉ hiển thị các đăng ký CHỜ DUYỆT
      * - Chỉ hiển thị các đăng ký chưa quá ngày (ngày_lam >= hôm nay)
      */
-    public List<DangKy> getDanhSachDangKyAdminWithFilter(Integer maCalam, LocalDate ngayFilter, int limit, int offset) {
+    public List<DangKy> getDanhSachDangKyAdminWithFilter(Integer maCalam, LocalDate ngayFilter, String statusFilter, int limit, int offset) {
         List<DangKy> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder();
         
@@ -316,8 +316,11 @@ public class DangKyDAO {
         sql.append("FROM dangkycalam d ");
         sql.append("LEFT JOIN calam c ON d.ma_calam = c.ma_calam ");
         sql.append("INNER JOIN nguoidung n ON d.ma_nguoidung = n.ma_nguoidung ");
-        sql.append("WHERE d.trangthai = 'chờ duyệt' ");
-        sql.append("AND d.ngay_lam >= CURDATE() ");
+        sql.append("WHERE d.ngay_lam >= CURDATE() ");
+        
+        if (statusFilter != null && !statusFilter.trim().isEmpty()) {
+            sql.append("AND d.trangthai = ? ");
+        }
         
         if (maCalam != null) {
             sql.append("AND d.ma_calam = ? ");
@@ -334,6 +337,10 @@ public class DangKyDAO {
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
             
             int paramIndex = 1;
+            
+            if (statusFilter != null && !statusFilter.trim().isEmpty()) {
+                pstmt.setString(paramIndex++, statusFilter);
+            }
             
             if (maCalam != null) {
                 pstmt.setInt(paramIndex++, maCalam);
@@ -386,13 +393,16 @@ public class DangKyDAO {
     /**
      * Đếm tổng số đăng ký cho admin (với filter)
      */
-    public int countDanhSachDangKyAdmin(Integer maCalam, LocalDate ngayFilter) {
+    public int countDanhSachDangKyAdmin(Integer maCalam, LocalDate ngayFilter, String statusFilter) {
         StringBuilder sql = new StringBuilder();
         
         sql.append("SELECT COUNT(*) ");
         sql.append("FROM dangkycalam d ");
-        sql.append("WHERE d.trangthai = 'chờ duyệt' ");
-        sql.append("AND d.ngay_lam >= CURDATE() ");
+        sql.append("WHERE d.ngay_lam >= CURDATE() ");
+        
+        if (statusFilter != null && !statusFilter.trim().isEmpty()) {
+            sql.append("AND d.trangthai = ? ");
+        }
         
         if (maCalam != null) {
             sql.append("AND d.ma_calam = ? ");
@@ -406,6 +416,10 @@ public class DangKyDAO {
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
             
             int paramIndex = 1;
+            
+            if (statusFilter != null && !statusFilter.trim().isEmpty()) {
+                pstmt.setString(paramIndex++, statusFilter);
+            }
             
             if (maCalam != null) {
                 pstmt.setInt(paramIndex++, maCalam);

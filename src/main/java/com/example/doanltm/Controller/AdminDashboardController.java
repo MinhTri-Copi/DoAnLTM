@@ -380,7 +380,7 @@ public class AdminDashboardController implements NotificationListener {
         if (caFilterCombo != null && caFilterCombo.getValue() != null) maCalam = caFilterCombo.getValue().getMaCalam();
         LocalDate ngay = ngayFilterPicker != null ? ngayFilterPicker.getValue() : null;
         
-        DanhSachDangKyAdminRequest request = new DanhSachDangKyAdminRequest(maCalam, ngay, currentPage, pageSize);
+        DanhSachDangKyAdminRequest request = new DanhSachDangKyAdminRequest(maCalam, ngay, "chờ duyệt", currentPage, pageSize);
         DanhSachDangKyAdminResponse response = tcpClient.getDanhSachDangKyAdmin(request);
         
         if (response.isSuccess() && response.getRegistrations() != null) {
@@ -1482,10 +1482,15 @@ public class AdminDashboardController implements NotificationListener {
     public void onNewRegistration(NewRegistrationNotification notification) {
         System.out.println("📑 Admin nhận được notification: " + notification.getMessage());
         Platform.runLater(() -> {
-            showInfo("Có đăng ký mới: " + notification.getMessage());
-            System.out.println("🔄 Đang refresh danh sách đăng ký...");
-            refreshRegistrations();
-            refreshStats();
+            // Only add if the new registration is pending and not in the past
+            DangKy newReg = notification.getNewRegistration();
+            if (newReg.getTrangthai() == DangKy.TrangThai.CHO_DUYET && !newReg.getNgayLam().isBefore(LocalDate.now())) {
+                showInfo("Có đăng ký mới: " + notification.getMessage());
+                System.out.println("🔄 Đang refresh danh sách đăng ký do có thông báo mới...");
+                currentPage = 1; // Reset to first page to show new registration
+                refreshRegistrations(); // Re-fetch all pending registrations
+            }
+            refreshStats(); // Always refresh stats
         });
     }
 
