@@ -674,6 +674,11 @@ public class EnhancedUserDashboardController implements NotificationListener {
         String statusFilter = statusFilterCombo != null ? statusFilterCombo.getValue() : "Tất cả";
         
         filteredList.setPredicate(dangKy -> {
+            // Filter for cancellable registrations
+            if (!(dangKy.getTrangthai() == DangKy.TrangThai.CHO_DUYET && !dangKy.getNgayLam().isBefore(LocalDate.now()))) {
+                return false;
+            }
+
             // Search filter
             if (!searchText.isEmpty()) {
                 String searchableText = (dangKy.getMoTaCaLam() + " " + 
