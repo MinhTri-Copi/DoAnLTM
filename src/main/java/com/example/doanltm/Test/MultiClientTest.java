@@ -1,6 +1,7 @@
 package com.example.doanltm.Test;
 
-import com.example.doanltm.Model.*;
+import com.example.doanltm.Model.User;
+import com.example.doanltm.Response.LoginResponse;
 import com.example.doanltm.Request.GetCaLamRequest;
 import com.example.doanltm.Request.LoginRequest;
 import com.example.doanltm.Response.GetCaLamResponse;

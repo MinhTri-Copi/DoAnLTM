@@ -36,9 +36,11 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import com.example.doanltm.Service.NotificationListener;
+import com.example.doanltm.Request.NewRegistrationNotification;
 import java.util.stream.Collectors;
 
-public class EnhancedUserDashboardController {
+public class EnhancedUserDashboardController implements NotificationListener {
 
     // User info
     private User currentUser;
@@ -313,7 +315,8 @@ public class EnhancedUserDashboardController {
                         setGraphic(null);
                     } else {
                         DangKy dangKy = getTableView().getItems().get(getIndex());
-                        if (dangKy.getTrangthai() == DangKy.TrangThai.CHO_DUYET) {
+                        // Chỉ hiển thị nút hủy cho các ca đang chờ duyệt và chưa qua ngày
+                        if (dangKy.getTrangthai() == DangKy.TrangThai.CHO_DUYET && !dangKy.getNgayLam().isBefore(LocalDate.now())) {
                             setGraphic(huyButton);
                         } else {
                             setGraphic(null);
@@ -394,6 +397,9 @@ public class EnhancedUserDashboardController {
 
     public void setTCPClientService(TCPClientService service) {
         this.tcpClientService = service;
+        if (this.tcpClientService != null) {
+            this.tcpClientService.setNotificationListener(this);
+        }
         System.out.println("✅ TCPClientService set for Enhanced Dashboard");
     }
 
@@ -822,9 +828,50 @@ public class EnhancedUserDashboardController {
         alert.showAndWait();
     }
 
-    public void cleanup() {
-        if (scheduler != null) {
-            scheduler.shutdown();
+        public void cleanup() {
+
+            if (scheduler != null) {
+
+                scheduler.shutdown();
+
+            }
+
         }
+
+    
+
+        @Override
+
+        public void onStatusChange(DangKy updatedDangKy) {
+
+            Platform.runLater(() -> {
+
+                for (int i = 0; i < dangKyList.size(); i++) {
+
+                    if (dangKyList.get(i).getMaDangky() == updatedDangKy.getMaDangky()) {
+
+                        dangKyList.set(i, updatedDangKy);
+
+                        System.out.println("UI Updated for registration: " + updatedDangKy.getMaDangky());
+
+                        break;
+
+                    }
+
+                }
+
+            });
+
+        }
+
+    
+
+        @Override
+
+        public void onNewRegistration(NewRegistrationNotification notification) {
+
+            // User dashboard doesn't need to handle this
+
+        }
+
     }
-}

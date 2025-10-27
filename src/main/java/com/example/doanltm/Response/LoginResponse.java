@@ -1,4 +1,6 @@
-package com.example.doanltm.Model;
+package com.example.doanltm.Response;
+
+import com.example.doanltm.Model.User;
 
 import java.io.Serializable;
 

@@ -1,15 +1,12 @@
-
 package com.example.doanltm.Controller;
 
 import com.example.doanltm.Model.*;
-import com.example.doanltm.Request.DangKyRequest;
-import com.example.doanltm.Request.GetCaLamRequest;
-import com.example.doanltm.Request.GetDangKyRequest;
-import com.example.doanltm.Request.HuyDangKyRequest;
+import com.example.doanltm.Request.*;
 import com.example.doanltm.Response.DangKyResponse;
 import com.example.doanltm.Response.GetCaLamResponse;
 import com.example.doanltm.Response.GetDangKyResponse;
 import com.example.doanltm.Response.HuyDangKyResponse;
+import com.example.doanltm.Service.NotificationListener;
 import com.example.doanltm.Service.TCPClientService;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
@@ -30,7 +27,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
-public class UserDashboardController {
+public class UserDashboardController implements NotificationListener {
 
     // User info
     private User currentUser;
@@ -62,13 +59,10 @@ public class UserDashboardController {
     @FXML private TableColumn<DangKy, String> colTrangThai;
     @FXML private TableColumn<DangKy, Void> colAction;
 
-    private ObservableList<DangKy> dangKyList = FXCollections.observableArrayList();
+    private final ObservableList<DangKy> dangKyList = FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
-        // KHÔNG khởi tạo TCPClientService ở đây
-        // Sẽ được set từ LoginController
-
         if (ngayLamCaBinhThuongPicker != null) {
             ngayLamCaBinhThuongPicker.setValue(LocalDate.now());
         }
@@ -81,24 +75,21 @@ public class UserDashboardController {
         setupTableView();
     }
 
-    /**
-     * ✅ THÊM METHOD NÀY - Nhận TCPClientService từ LoginController
-     */
     public void setTCPClientService(TCPClientService service) {
         this.tcpClientService = service;
+        // Đăng ký listener để nhận thông báo
+        if (this.tcpClientService != null) {
+            this.tcpClientService.setNotificationListener(this);
+        }
         System.out.println("✅ TCPClientService đã được set cho UserDashboardController");
     }
 
-    /**
-     * Set user hiện tại
-     */
     public void setCurrentUser(User user) {
         this.currentUser = user;
         if (userNameLabel != null) {
             userNameLabel.setText(user.getHoTen());
         }
 
-        // Chỉ load data khi đã có tcpClientService
         if (tcpClientService != null) {
             loadCaLamList();
             loadDangKyList();
@@ -107,7 +98,23 @@ public class UserDashboardController {
         }
     }
 
-    // ... rest of your code (giữ nguyên tất cả các method khác) ...
+    @Override
+    public void onStatusChange(DangKy updatedDangKy) {
+        Platform.runLater(() -> {
+            for (int i = 0; i < dangKyList.size(); i++) {
+                if (dangKyList.get(i).getMaDangky() == updatedDangKy.getMaDangky()) {
+                    dangKyList.set(i, updatedDangKy);
+                    System.out.println("UI Updated for registration: " + updatedDangKy.getMaDangky());
+                    break;
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onNewRegistration(NewRegistrationNotification notification) {
+        // User dashboard không cần xử lý thông báo này
+    }
 
     private void initializeTimeSpinners() {
         if (gioBatDauSpinner != null) {
@@ -115,7 +122,6 @@ public class UserDashboardController {
             gioBatDauSpinner.setValueFactory(gioFactory1);
             gioBatDauSpinner.setEditable(true);
             gioBatDauSpinner.getEditor().setStyle("-fx-text-fill: #2c3e50 !important; -fx-background-color: white !important; -fx-font-size: 14px; -fx-font-weight: bold; -fx-alignment: center; -fx-opacity: 1.0 !important;");
-            // Force display and commit value
             Platform.runLater(() -> {
                 gioBatDauSpinner.getEditor().setText("8");
                 gioBatDauSpinner.commitValue();
@@ -127,7 +133,6 @@ public class UserDashboardController {
             gioKetThucSpinner.setValueFactory(gioFactory2);
             gioKetThucSpinner.setEditable(true);
             gioKetThucSpinner.getEditor().setStyle("-fx-text-fill: #2c3e50 !important; -fx-background-color: white !important; -fx-font-size: 14px; -fx-font-weight: bold; -fx-alignment: center; -fx-opacity: 1.0 !important;");
-            // Force display and commit value
             Platform.runLater(() -> {
                 gioKetThucSpinner.getEditor().setText("17");
                 gioKetThucSpinner.commitValue();
@@ -139,7 +144,6 @@ public class UserDashboardController {
             phutBatDauSpinner.setValueFactory(phutFactory1);
             phutBatDauSpinner.setEditable(true);
             phutBatDauSpinner.getEditor().setStyle("-fx-text-fill: #2c3e50 !important; -fx-background-color: white !important; -fx-font-size: 14px; -fx-font-weight: bold; -fx-alignment: center; -fx-opacity: 1.0 !important;");
-            // Force display and commit value
             Platform.runLater(() -> {
                 phutBatDauSpinner.getEditor().setText("0");
                 phutBatDauSpinner.commitValue();
@@ -151,7 +155,6 @@ public class UserDashboardController {
             phutKetThucSpinner.setValueFactory(phutFactory2);
             phutKetThucSpinner.setEditable(true);
             phutKetThucSpinner.getEditor().setStyle("-fx-text-fill: #2c3e50 !important; -fx-background-color: white !important; -fx-font-size: 14px; -fx-font-weight: bold; -fx-alignment: center; -fx-opacity: 1.0 !important;");
-            // Force display and commit value
             Platform.runLater(() -> {
                 phutKetThucSpinner.getEditor().setText("0");
                 phutKetThucSpinner.commitValue();
@@ -231,7 +234,6 @@ public class UserDashboardController {
     private void setupTableView() {
         if (dangKyTableView == null) return;
 
-        // Set column resize policy to distribute columns evenly
         dangKyTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         if (colNgayLam != null) {
@@ -268,8 +270,8 @@ public class UserDashboardController {
             colThoiGianDangKy.setCellValueFactory(cellData ->
                     new SimpleObjectProperty<>(cellData.getValue().getThoigianDangky())
             );
-            colThoiGianDangKy.setCellFactory(column -> new TableCell<DangKy, LocalDateTime>() {
-                private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            colThoiGianDangKy.setCellFactory(column -> new TableCell<>() {
+                private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
                 @Override
                 protected void updateItem(LocalDateTime item, boolean empty) {
@@ -287,7 +289,7 @@ public class UserDashboardController {
             colTrangThai.setCellValueFactory(cellData ->
                     new SimpleStringProperty(cellData.getValue().getTrangthai().getValue())
             );
-            colTrangThai.setCellFactory(column -> new TableCell<DangKy, String>() {
+            colTrangThai.setCellFactory(column -> new TableCell<>() {
                 @Override
                 protected void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -313,7 +315,7 @@ public class UserDashboardController {
         }
 
         if (colAction != null) {
-            colAction.setCellFactory(param -> new TableCell<DangKy, Void>() {
+            colAction.setCellFactory(param -> new TableCell<>() {
                 private final Button huyButton = new Button("Hủy");
 
                 {
@@ -331,7 +333,7 @@ public class UserDashboardController {
                         setGraphic(null);
                     } else {
                         DangKy dangKy = getTableView().getItems().get(getIndex());
-                        if (dangKy.getTrangthai() == DangKy.TrangThai.CHO_DUYET) {
+                        if (dangKy.getTrangthai() == DangKy.TrangThai.CHO_DUYET && !dangKy.getNgayLam().isBefore(LocalDate.now())) {
                             setGraphic(huyButton);
                         } else {
                             setGraphic(null);
@@ -393,7 +395,7 @@ public class UserDashboardController {
 
         new Thread(() -> {
             DangKy dangKy = new DangKy(currentUser.getMaNguoidung(), caLam.getMaCalam(), ngayLam);
-            dangKy.setThoigianDangky(LocalDateTime.now());  // Đặt thời gian đăng ký là thời gian hiện tại
+            dangKy.setThoigianDangky(LocalDateTime.now());
             DangKyRequest request = new DangKyRequest(dangKy);
             DangKyResponse response = tcpClientService.dangKyCaLam(request);
 
@@ -448,7 +450,7 @@ public class UserDashboardController {
 
         new Thread(() -> {
             DangKy dangKy = new DangKy(currentUser.getMaNguoidung(), ngayLam, gioBatDau, gioKetThuc);
-            dangKy.setThoigianDangky(LocalDateTime.now());  // Đặt thời gian đăng ký là thời gian hiện tại
+            dangKy.setThoigianDangky(LocalDateTime.now());
             DangKyRequest request = new DangKyRequest(dangKy);
             DangKyResponse response = tcpClientService.dangKyCaLam(request);
 

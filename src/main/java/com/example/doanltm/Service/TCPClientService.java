@@ -1,43 +1,45 @@
 package com.example.doanltm.Service;
 
-import com.example.doanltm.Model.*;
+import com.example.doanltm.Model.DangKy;
 import com.example.doanltm.Request.*;
 import com.example.doanltm.Response.*;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.Socket;
-import java.util.function.Consumer;
+import java.net.SocketException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class TCPClientService {
     private static final String SERVER_HOST = "localhost";
     private static final int SERVER_PORT = 8888;
-    
+
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
-    private boolean isConnected = false;
-    private Thread listenerThread;
-    private volatile boolean shouldListen = true;
-    private Consumer<NewRegistrationNotification> notificationCallback;
-    
-    /**
-     * Kết nối đến server (giữ kết nối lâu dài)
-     */
+
+    private volatile boolean isConnected = false;
+    private Thread readerThread;
+    private NotificationListener notificationListener;
+
+    // Hàng đợi để giữ các response cho các request đồng bộ
+    private final BlockingQueue<Object> responseQueue = new LinkedBlockingQueue<>();
+
     public synchronized boolean connect() {
         if (isConnected && socket != null && !socket.isClosed()) {
-            System.out.println("✅ Đã có kết nối sẵn sàng!");
             return true;
         }
-        
         try {
             socket = new Socket(SERVER_HOST, SERVER_PORT);
-            socket.setSoTimeout(10000); // 10 giây timeout
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
             isConnected = true;
+            startReaderThread(); // Bắt đầu luồng đọc duy nhất
             System.out.println("✅ Kết nối đến server thành công!");
-            // Bắt đầu listener thread để nhận notification từ server
-            startListening();
             return true;
         } catch (IOException e) {
             System.err.println("❌ Không thể kết nối đến server: " + e.getMessage());
@@ -45,350 +47,134 @@ public class TCPClientService {
             return false;
         }
     }
-    
-    /**
-     * Đăng ký callback nhận notification khi có đơn đăng ký mới
-     */
-    public void setNotificationCallback(Consumer<NewRegistrationNotification> callback) {
-        this.notificationCallback = callback;
-        System.out.println("📄 Đăng ký callback nhận notification");
+
+    public void setNotificationListener(NotificationListener listener) {
+        this.notificationListener = listener;
     }
-    
-    /**
-     * Bắt đầu listener thread để nhận broadcast từ server
-     */
-    private synchronized void startListening() {
-        if (listenerThread != null && listenerThread.isAlive()) {
-            return;  // Đã đang lắng nghe
-        }
-        
-        listenerThread = new Thread(() -> {
-            System.out.println("📄 Listener thread bắt đầu...");
-            while (shouldListen && isConnected) {
+
+    private void startReaderThread() {
+        readerThread = new Thread(() -> {
+            while (isConnected) {
                 try {
-                    synchronized (in) {
-                        if (in.available() > 0) {
-                            Object obj = in.readObject();
-                            if (obj instanceof NewRegistrationNotification) {
-                                NewRegistrationNotification notification = (NewRegistrationNotification) obj;
-                                System.out.println("📑 Nhận notification: " + notification.getMessage());
-                                if (notificationCallback != null) {
-                                    notificationCallback.accept(notification);
-                                }
-                            }
-                        } else {
-                            Thread.sleep(500);  // Chờ 500ms trước khi kiểm tra lại
+                    // Luồng này là nơi duy nhất đọc từ ObjectInputStream
+                    Object serverMessage = in.readObject();
+
+                    // Phân loại message: là Notification hay Response?
+                    if (serverMessage instanceof RegistrationStatusChangedNotification) {
+                        if (notificationListener != null) {
+                            DangKy updatedDangKy = ((RegistrationStatusChangedNotification) serverMessage).getUpdatedDangKy();
+                            notificationListener.onStatusChange(updatedDangKy);
                         }
+                    } else if (serverMessage instanceof NewRegistrationNotification) {
+                        if (notificationListener != null) {
+                            notificationListener.onNewRegistration((NewRegistrationNotification) serverMessage);
+                        }
+                    } else {
+                        // Nếu không phải là notification, đó là một response đang được chờ
+                        responseQueue.put(serverMessage);
                     }
-                } catch (EOFException e) {
-                    System.out.println("📄 Connection closed by server");
-                    break;
-                } catch (IOException | ClassNotFoundException e) {
-                    if (shouldListen) {
-                        System.err.println("❌ Lỗi listener: " + e.getMessage());
+                } catch (SocketException e) {
+                    if (!isConnected) {
+                        System.out.println("🔌 Socket đã đóng, luồng đọc dừng lại.");
+                        break;
+                    }
+                } catch (IOException | ClassNotFoundException | InterruptedException e) {
+                    if (isConnected) {
+                        System.err.println("❌ Mất kết nối với server: " + e.getMessage());
+                        isConnected = false;
                     }
                     break;
-                } catch (InterruptedException e) {
-                    // Ignore sleep interruption
                 }
             }
-            System.out.println("📄 Listener thread dừng lại");
         });
-        listenerThread.setDaemon(true);
-        listenerThread.start();
+        readerThread.setDaemon(true);
+        readerThread.start();
     }
-    
-    /**
-     * Kiểm tra kết nối và reconnect nếu cần
-     */
-    private synchronized boolean ensureConnection() {
-        if (!isConnected || socket == null || socket.isClosed()) {
-            System.out.println("⚠️ Kết nối bị mất, đang thử kết nối lại...");
-            return connect();
-        }
-        return true;
-    }
-    
-    /**
-     * Đăng nhập
-     */
-    public synchronized LoginResponse login(LoginRequest request) {
+
+    private synchronized <T> T sendRequest(Serializable request) {
         if (!ensureConnection()) {
-            return new LoginResponse(false, "Không thể kết nối đến server!");
+            System.err.println("Không thể gửi request, mất kết nối.");
+            return null; // Hoặc trả về một response lỗi chung
         }
-        
         try {
-            out.writeObject(request);
-            out.flush();
-            System.out.println("📤 Đã gửi login request: " + request);
+            // Xóa hàng đợi trước khi gửi request mới
+            responseQueue.clear();
             
-            LoginResponse response = (LoginResponse) in.readObject();
-            System.out.println("📥 Nhận response: " + response);
-            
-            return response;
-            
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
-            e.printStackTrace();
-            isConnected = false;
-            
-            // Thử reconnect và gửi lại
-            if (ensureConnection()) {
-                return login(request);
+            synchronized (out) {
+                out.writeObject(request);
+                out.flush();
             }
-            return new LoginResponse(false, "Lỗi kết nối: " + e.getMessage());
+
+            // Chờ và lấy response từ hàng đợi, với timeout
+            Object response = responseQueue.poll(10, TimeUnit.SECONDS);
+            if (response == null) {
+                System.err.println("Request timed out!");
+                return null;
+            }
+            return (T) response;
+        } catch (IOException | InterruptedException e) {
+            System.err.println("❌ Lỗi khi gửi request hoặc chờ response: " + e.getMessage());
+            isConnected = false;
+            return null;
         }
     }
-    
-    /**
-     * Lấy danh sách ca làm
-     */
-    public synchronized GetCaLamResponse getCaLam(GetCaLamRequest request) {
-        if (!ensureConnection()) {
-            return new GetCaLamResponse(false, "Không thể kết nối đến server!");
-        }
-        
-        try {
-            out.writeObject(request);
-            out.flush();
-            System.out.println("📤 Đã gửi get ca lam request: " + request);
-            
-            GetCaLamResponse response = (GetCaLamResponse) in.readObject();
-            System.out.println("📥 Nhận response với " + (response.getCaLamList() != null ? response.getCaLamList().size() : 0) + " ca làm");
-            
-            return response;
-            
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
-            e.printStackTrace();
-            isConnected = false;
-            
-            // Thử reconnect và gửi lại
-            if (ensureConnection()) {
-                return getCaLam(request);
-            }
-            return new GetCaLamResponse(false, "Lỗi kết nối: " + e.getMessage());
-        }
+
+    public LoginResponse login(LoginRequest request) {
+        return sendRequest(request);
     }
-    
-    /**
-     * Đăng ký ca làm
-     */
-    public synchronized DangKyResponse dangKyCaLam(DangKyRequest request) {
-        if (!ensureConnection()) {
-            return new DangKyResponse(false, "Không thể kết nối đến server!");
-        }
-        
-        try {
-            out.writeObject(request);
-            out.flush();
-            System.out.println("📤 Đã gửi dang ky request: " + request);
-            
-            DangKyResponse response = (DangKyResponse) in.readObject();
-            System.out.println("📥 Nhận response: " + response.getMessage());
-            
-            return response;
-            
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
-            e.printStackTrace();
-            isConnected = false;
-            
-            // Thử reconnect và gửi lại
-            if (ensureConnection()) {
-                return dangKyCaLam(request);
-            }
-            return new DangKyResponse(false, "Lỗi kết nối: " + e.getMessage());
-        }
+
+    public GetCaLamResponse getCaLam(GetCaLamRequest request) {
+        return sendRequest(request);
     }
-    
-    /**
-     * Lấy danh sách đăng ký của user
-     */
-    public synchronized GetDangKyResponse getDangKyByUser(GetDangKyRequest request) {
-        if (!ensureConnection()) {
-            return new GetDangKyResponse(false, "Không thể kết nối đến server!");
-        }
-        
-        try {
-            out.writeObject(request);
-            out.flush();
-            System.out.println("📤 Đã gửi get dang ky request: " + request);
-            
-            GetDangKyResponse response = (GetDangKyResponse) in.readObject();
-            System.out.println("📥 Nhận response với " + (response.getDangKyList() != null ? response.getDangKyList().size() : 0) + " đăng ký");
-            
-            return response;
-            
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
-            e.printStackTrace();
-            isConnected = false;
-            
-            // Thử reconnect và gửi lại
-            if (ensureConnection()) {
-                return getDangKyByUser(request);
-            }
-            return new GetDangKyResponse(false, "Lỗi kết nối: " + e.getMessage());
-        }
+
+    public DangKyResponse dangKyCaLam(DangKyRequest request) {
+        return sendRequest(request);
     }
-    
-    /**
-     * Hủy đăng ký
-     */
-    public synchronized HuyDangKyResponse huyDangKy(HuyDangKyRequest request) {
-        if (!ensureConnection()) {
-            return new HuyDangKyResponse(false, "Không thể kết nối đến server!");
-        }
-        
-        try {
-            out.writeObject(request);
-            out.flush();
-            System.out.println("📤 Đã gửi huy dang ky request: " + request);
-            
-            HuyDangKyResponse response = (HuyDangKyResponse) in.readObject();
-            System.out.println("📥 Nhận response: " + response.getMessage());
-            
-            return response;
-            
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
-            e.printStackTrace();
-            isConnected = false;
-            
-            // Thử reconnect và gửi lại
-            if (ensureConnection()) {
-                return huyDangKy(request);
-            }
-            return new HuyDangKyResponse(false, "Lỗi kết nối: " + e.getMessage());
-        }
+
+    public GetDangKyResponse getDangKyByUser(GetDangKyRequest request) {
+        return sendRequest(request);
     }
-    
-    /**
-     * Ngắt kết nối
-     */
+
+    public HuyDangKyResponse huyDangKy(HuyDangKyRequest request) {
+        return sendRequest(request);
+    }
+
+    public CapNhatTrangThaiResponse capNhatTrangThai(CapNhatTrangThaiRequest request) {
+        return sendRequest(request);
+    }
+
+    public ThongKeAdminResponse getThongKeAdmin(ThongKeAdminRequest request) {
+        return sendRequest(request);
+    }
+
+    public DanhSachDangKyAdminResponse getDanhSachDangKyAdmin(DanhSachDangKyAdminRequest request) {
+        return sendRequest(request);
+    }
+
     public synchronized void disconnect() {
+        isConnected = false;
         try {
-            isConnected = false;
-            if (in != null) in.close();
-            if (out != null) out.close();
+            if (readerThread != null) {
+                readerThread.interrupt();
+            }
             if (socket != null && !socket.isClosed()) {
                 socket.close();
-                System.out.println("✅ Đã ngắt kết nối khỏi server!");
             }
+            System.out.println("✅ Đã ngắt kết nối khỏi server.");
         } catch (IOException e) {
             System.err.println("❌ Lỗi khi đóng kết nối: " + e.getMessage());
         }
     }
-    
-    /**
-     * Lấy thống kê admin
-     */
-    public synchronized ThongKeAdminResponse getThongKeAdmin(ThongKeAdminRequest request) {
-        if (!ensureConnection()) {
-            return new ThongKeAdminResponse(false, "Không thể kết nối đến server!");
-        }
-        
-        try {
-            out.writeObject(request);
-            out.flush();
-            System.out.println("📤 Đã gửi thống kê admin request: " + request);
-            
-            ThongKeAdminResponse response = (ThongKeAdminResponse) in.readObject();
-            System.out.println("📥 Nhận thống kê admin response: " + response.getMessage());
-            
-            return response;
-            
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
-            e.printStackTrace();
-            isConnected = false;
-            
-            // Thử reconnect và gửi lại
-            if (ensureConnection()) {
-                return getThongKeAdmin(request);
-            }
-            return new ThongKeAdminResponse(false, "Lỗi kết nối: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * Lấy danh sách đăng ký cho admin
-     */
-    public synchronized DanhSachDangKyAdminResponse getDanhSachDangKyAdmin(DanhSachDangKyAdminRequest request) {
-        if (!ensureConnection()) {
-            return new DanhSachDangKyAdminResponse(false, "Không thể kết nối đến server!");
-        }
-        
-        try {
-            out.writeObject(request);
-            out.flush();
-            System.out.println("📤 Đã gửi danh sách đăng ký admin request: " + request);
-            
-            DanhSachDangKyAdminResponse response = (DanhSachDangKyAdminResponse) in.readObject();
-            System.out.println("📥 Nhận danh sách đăng ký admin response với " + 
-                (response.getRegistrations() != null ? response.getRegistrations().size() : 0) + " đăng ký");
-            
-            return response;
-            
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
-            e.printStackTrace();
-            isConnected = false;
-            
-            // Thử reconnect và gửi lại
-            if (ensureConnection()) {
-                return getDanhSachDangKyAdmin(request);
-            }
-            return new DanhSachDangKyAdminResponse(false, "Lỗi kết nối: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * Cập nhật trạng thái đăng ký
-     */
-    public synchronized CapNhatTrangThaiResponse capNhatTrangThai(CapNhatTrangThaiRequest request) {
-        if (!ensureConnection()) {
-            return new CapNhatTrangThaiResponse(false, "Không thể kết nối đến server!");
-        }
-        
-        try {
-            out.writeObject(request);
-            out.flush();
-            System.out.println("📤 Đã gửi cập nhật trạng thái request: " + request);
-            
-            CapNhatTrangThaiResponse response = (CapNhatTrangThaiResponse) in.readObject();
-            System.out.println("📥 Nhận cập nhật trạng thái response: " + response.getMessage());
-            
-            return response;
-            
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("❌ Lỗi khi gửi/nhận dữ liệu: " + e.getMessage());
-            e.printStackTrace();
-            isConnected = false;
-            
-            // Thử reconnect và gửi lại
-            if (ensureConnection()) {
-                return capNhatTrangThai(request);
-            }
-            return new CapNhatTrangThaiResponse(false, "Lỗi kết nối: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * Kiểm tra trạng thái kết nối
-     */
+
     public boolean isConnected() {
         return isConnected && socket != null && !socket.isClosed();
     }
-    
-    /**
-     * Dừng listener
-     */
-    public void stopListening() {
-        shouldListen = false;
-        if (listenerThread != null) {
-            listenerThread.interrupt();
+
+    private synchronized boolean ensureConnection() {
+        if (!isConnected()) {
+            System.out.println("⚠️ Kết nối bị mất, đang thử kết nối lại...");
+            return connect();
         }
+        return true;
     }
 }

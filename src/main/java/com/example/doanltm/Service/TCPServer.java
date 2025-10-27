@@ -13,21 +13,23 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class TCPServer {
     private static final int PORT = 8888;
     private static final int MAX_CLIENTS = 50;
-    
+
     private ServerSocket serverSocket;
     private ExecutorService threadPool;
     private boolean isRunning = false;
     private int clientCount = 0;  // Đếm số client đang kết nối
-    private List<ClientHandler> adminClients = new ArrayList<>();  // Track tất cả admin clients
+    private final List<ClientHandler> adminClients = new ArrayList<>();  // Track tất cả admin clients
+    private final Map<Integer, ClientHandler> userClients = new ConcurrentHashMap<>(); // Track user clients by user ID
 
     public TCPServer() {
-        // Sử dụng CachedThreadPool thay vì FixedThreadPool cho hiệu quả tốt hơn
         threadPool = Executors.newCachedThreadPool();
         System.out.println("🛠️ Khởi tạo Thread Pool - MAX_CLIENTS: " + MAX_CLIENTS);
     }
@@ -41,14 +43,13 @@ public class TCPServer {
 
             while (isRunning) {
                 Socket clientSocket = serverSocket.accept();
-                
+
                 synchronized (this) {
                     clientCount++;
-                    System.out.println("✅ Client mới kết nối: " + clientSocket.getInetAddress() + 
+                    System.out.println("✅ Client mới kết nối: " + clientSocket.getInetAddress() +
                                      " [Tổng: " + clientCount + "/" + MAX_CLIENTS + "]");
                 }
-                
-                // Kiểm tra giới hạn client
+
                 if (clientCount > MAX_CLIENTS) {
                     System.out.println("⚠️ Vượt quá giới hạn client! Từ chối kết nối.");
                     clientSocket.close();
@@ -58,7 +59,6 @@ public class TCPServer {
                     continue;
                 }
 
-                // Xử lý client trong thread pool
                 threadPool.execute(new ClientHandler(clientSocket, this));
             }
 
@@ -92,56 +92,61 @@ public class TCPServer {
             System.err.println("❌ Lỗi khi dừng server: " + e.getMessage());
         }
     }
-    
-    /**
-     * Giảm số client count khi client ngăt kết nối
-     */
+
     public synchronized void decrementClientCount() {
         clientCount--;
         System.out.println("📋 Client ngăt kết nối. Còn lại: " + clientCount + "/" + MAX_CLIENTS);
     }
-    
-    /**
-     * Thêm admin client vào danh sách quản lý
-     */
+
     public synchronized void registerAdminClient(ClientHandler handler) {
         adminClients.add(handler);
         System.out.println("📄 Đăng ký admin client. Tổng: " + adminClients.size());
     }
-    
-    /**
-     * Bỏ admin client khỏi danh sách
-     */
+
     public synchronized void unregisterAdminClient(ClientHandler handler) {
         adminClients.remove(handler);
         System.out.println("📄 Bỏ admin client. Tổng: " + adminClients.size());
     }
-    
-    /**
-     * Broadcast thông báo tới tất cả admin clients
-     */
+
+    public void registerUserClient(int userId, ClientHandler handler) {
+        userClients.put(userId, handler);
+        System.out.println("[User-Socket] Đăng ký user ID: " + userId);
+    }
+
+    public void unregisterUserClient(int userId) {
+        userClients.remove(userId);
+        System.out.println("[User-Socket] Bỏ đăng ký user ID: " + userId);
+    }
+
     public synchronized void broadcastNewRegistration(NewRegistrationNotification notification) {
-        System.out.println("📑 Broadcast thông báo: " + notification.getMessage());
+        System.out.println("📑 Broadcast thông báo admin: " + notification.getMessage());
         for (ClientHandler client : adminClients) {
-            client.sendNotification(notification);
+            client.sendObject(notification);
         }
     }
 
-    /**
-     * Inner class xử lý từng client
-     */
+    public void sendNotificationToUser(int userId, Serializable notification) {
+        ClientHandler handler = userClients.get(userId);
+        if (handler != null) {
+            System.out.println("📤 Gửi thông báo đến user ID: " + userId);
+            handler.sendObject(notification);
+        } else {
+            System.out.println("⚠️ Không tìm thấy client cho user ID: " + userId + " để gửi thông báo.");
+        }
+    }
+
     private static class ClientHandler implements Runnable {
-        private Socket clientSocket;
+        private final Socket clientSocket;
         private ObjectInputStream in;
         private ObjectOutputStream out;
-        private TCPServer server;  // Tham chiếu tới server
-        private String clientId;   // ID client cho dễ debug
+        private final TCPServer server;  // Tham chiếu tới server
+        private final String clientId;   // ID client cho dễ debug
+        private Integer userId; // Lưu ID của user sau khi login
 
-        // DAOs
-        private UserDAO userDAO;
-        private CaLamDAO caLamDAO;
-        private DangKyDAO dangKyDAO;
-        private AdminReportDAO adminReportDAO;
+        private final UserDAO userDAO;
+        private final CaLamDAO caLamDAO;
+        private final DangKyDAO dangKyDAO;
+        private final AdminReportDAO adminReportDAO;
 
         public ClientHandler(Socket socket, TCPServer server) {
             this.clientSocket = socket;
@@ -151,18 +156,15 @@ public class TCPServer {
             this.caLamDAO = new CaLamDAO();
             this.dangKyDAO = new DangKyDAO();
             this.adminReportDAO = new AdminReportDAO();
-            
             System.out.println("🔍 ClientHandler tạo cho: " + clientId);
         }
 
         @Override
         public void run() {
             try {
-                // Khởi tạo streams
                 out = new ObjectOutputStream(clientSocket.getOutputStream());
                 in = new ObjectInputStream(clientSocket.getInputStream());
 
-                // Lắng nghe request từ client
                 while (true) {
                     Object request = in.readObject();
 
@@ -204,44 +206,107 @@ public class TCPServer {
             }
         }
 
-        /**
-         * Xử lý login request
-         */
         private void handleLoginRequest(LoginRequest request) {
             System.out.println("📥 Nhận login request: " + request);
-
             try {
                 User user = userDAO.authenticate(request.getEmail(), request.getMatKhau());
-
                 LoginResponse response;
                 if (user != null) {
-                    user.setMatKhau(null); // Không gửi mật khẩu về client
+                    user.setMatKhau(null);
                     response = new LoginResponse(true, "Đăng nhập thành công!", user);
                     System.out.println("✅ Login thành công cho user: " + user.getEmail());
-                    
-                    // Register admin client for broadcasts
+
+                    this.userId = user.getMaNguoidung();
                     if (user.isAdmin()) {
                         server.registerAdminClient(this);
-                        System.out.println("📋 Admin client đăng ký cho broadcasts");
+                    } else {
+                        server.registerUserClient(this.userId, this);
                     }
                 } else {
                     response = new LoginResponse(false, "Email hoặc mật khẩu không đúng!");
                     System.out.println("❌ Login thất bại cho email: " + request.getEmail());
                 }
-
                 out.writeObject(response);
                 out.flush();
                 System.out.println("📤 Đã gửi LoginResponse về client\n");
-
             } catch (IOException e) {
                 System.err.println("❌ Lỗi khi gửi response: " + e.getMessage());
                 e.printStackTrace();
             }
         }
 
-        /**
-         * Xử lý get ca lam request
-         */
+        private void handleCapNhatTrangThaiRequest(CapNhatTrangThaiRequest request) {
+            System.out.println("📥 Nhận cập nhật trạng thái request: " + request);
+            try {
+                boolean success = dangKyDAO.updateTrangThai(request.getMaDangky(), request.getTrangThai());
+                CapNhatTrangThaiResponse response;
+                if (success) {
+                    response = new CapNhatTrangThaiResponse(true, "Cập nhật trạng thái thành công!");
+                    System.out.println("✅ Cập nhật trạng thái thành công cho mã đăng ký: " + request.getMaDangky());
+
+                    // Gửi thông báo real-time đến user liên quan
+                    DangKy updatedDangKy = dangKyDAO.getDangKyById(request.getMaDangky());
+                    if (updatedDangKy != null) {
+                        RegistrationStatusChangedNotification notification = new RegistrationStatusChangedNotification(updatedDangKy);
+                        server.sendNotificationToUser(updatedDangKy.getMaNguoidung(), notification);
+                    } else {
+                        System.out.println("⚠️ Không tìm thấy thông tin đăng ký để gửi thông báo.");
+                    }
+
+                } else {
+                    response = new CapNhatTrangThaiResponse(false, "Cập nhật trạng thái thất bại!");
+                    System.out.println("❌ Cập nhật trạng thái thất bại cho mã đăng ký: " + request.getMaDangky());
+                }
+                out.writeObject(response);
+                out.flush();
+                System.out.println("📤 Đã gửi CapNhatTrangThaiResponse về client\n");
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi gửi response: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        public void sendObject(Serializable object) {
+            try {
+                synchronized (out) {
+                    out.writeObject(object);
+                    out.flush();
+                    System.out.println("📄 Đã gửi object " + object.getClass().getSimpleName() + " tới " + clientId);
+                }
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi gửi object: " + e.getMessage());
+            }
+        }
+
+        private void closeConnection() {
+            try {
+                if (this.userId != null) {
+                    User user = userDAO.getUserById(this.userId);
+                    if (user != null && user.isAdmin()) {
+                        server.unregisterAdminClient(this);
+                    } else {
+                        server.unregisterUserClient(this.userId);
+                    }
+                }
+
+                if (in != null) in.close();
+                if (out != null) out.close();
+                if (clientSocket != null && !clientSocket.isClosed()) {
+                    clientSocket.close();
+                }
+
+                if (server != null) {
+                    server.decrementClientCount();
+                }
+
+                System.out.println("🔌 Đã đóng kết nối client: " + clientId + "\n");
+
+            } catch (IOException e) {
+                System.err.println("❌ Lỗi khi đóng kết nối " + clientId + ": " + e.getMessage());
+            }
+        }
+        // ... (rest of the handler methods remain the same)
+
         private void handleGetCaLamRequest(GetCaLamRequest request) {
             System.out.println("📥 Nhận get ca lam request: " + request);
 
@@ -267,19 +332,16 @@ public class TCPServer {
             }
         }
 
-        /**
-         * Xử lý dang ky request
-         */
         private void handleDangKyRequest(DangKyRequest request) {
             System.out.println("📥 Nhận dang ky request: " + request);
-            
+
             try {
                 DangKy dangKy = request.getDangKy();
                 System.out.println("🔍 Debug - DangKy object: " + dangKy);
                 System.out.println("🔍 Debug - isCaGay(): " + dangKy.isCaGay());
                 System.out.println("🔍 Debug - MaCalam: " + dangKy.getMaCalam());
                 System.out.println("🔍 Debug - NgayLam: " + dangKy.getNgayLam());
-                
+
                 DangKyResponse response;
 
                 // Kiểm tra logic trước khi đăng ký
@@ -357,9 +419,6 @@ public class TCPServer {
             }
         }
 
-        /**
-         * Xử lý get dang ky request
-         */
         private void handleGetDangKyRequest(GetDangKyRequest request) {
             System.out.println("📥 Nhận get dang ky request: " + request);
 
@@ -385,9 +444,6 @@ public class TCPServer {
             }
         }
 
-        /**
-         * Xử lý huy dang ky request
-         */
         private void handleHuyDangKyRequest(HuyDangKyRequest request) {
             System.out.println("📥 Nhận huy dang ky request: " + request);
 
@@ -413,9 +469,6 @@ public class TCPServer {
             }
         }
 
-        /**
-         * Xử lý thống kê admin request
-         */
         private void handleThongKeAdminRequest(ThongKeAdminRequest request) {
             System.out.println("📥 Nhận thống kê admin request: " + request);
 
@@ -426,7 +479,7 @@ public class TCPServer {
 
                 ThongKeAdminResponse response = new ThongKeAdminResponse(
                     true, "Lấy thống kê thành công!", total, normalShifts, brokenShifts);
-                
+
                 System.out.println("✅ Thống kê admin - Tổng: " + total + ", Ca bình thường: " + normalShifts + ", Ca gãy: " + brokenShifts);
 
                 out.writeObject(response);
@@ -439,25 +492,19 @@ public class TCPServer {
             }
         }
 
-        /**
-         * Xử lý danh sách đăng ký admin request (với phân trang)
-         */
         private void handleDanhSachDangKyAdminRequest(DanhSachDangKyAdminRequest request) {
             System.out.println("📥 Nhận danh sách đăng ký admin request: " + request);
 
             try {
-                // Tính offset từ page và pageSize
                 int offset = (request.getPage() - 1) * request.getPageSize();
-                
-                // Lấy danh sách đăng ký với phân trang
+
                 List<DangKy> registrations = dangKyDAO.getDanhSachDangKyAdminWithFilter(
-                    request.getMaCalam(), 
+                    request.getMaCalam(),
                     request.getNgayFilter(),
                     request.getPageSize(),
                     offset
                 );
-                
-                // Đếm tổng số bản ghi
+
                 int totalRecords = dangKyDAO.countDanhSachDangKyAdmin(
                     request.getMaCalam(),
                     request.getNgayFilter()
@@ -465,7 +512,7 @@ public class TCPServer {
 
                 DanhSachDangKyAdminResponse response = new DanhSachDangKyAdminResponse(
                     true, "Lấy danh sách đăng ký thành công!", registrations, totalRecords);
-                
+
                 System.out.println("✅ Tìm thấy " + registrations.size() + "/" + totalRecords + " đăng ký (trang " + request.getPage() + ")");
 
                 out.writeObject(response);
@@ -478,37 +525,6 @@ public class TCPServer {
             }
         }
 
-        /**
-         * Xử lý cập nhật trạng thái request
-         */
-        private void handleCapNhatTrangThaiRequest(CapNhatTrangThaiRequest request) {
-            System.out.println("📥 Nhận cập nhật trạng thái request: " + request);
-
-            try {
-                boolean success = dangKyDAO.updateTrangThai(request.getMaDangky(), request.getTrangThai());
-
-                CapNhatTrangThaiResponse response;
-                if (success) {
-                    response = new CapNhatTrangThaiResponse(true, "Cập nhật trạng thái thành công!");
-                    System.out.println("✅ Cập nhật trạng thái thành công");
-                } else {
-                    response = new CapNhatTrangThaiResponse(false, "Cập nhật trạng thái thất bại!");
-                    System.out.println("❌ Cập nhật trạng thái thất bại");
-                }
-
-                out.writeObject(response);
-                out.flush();
-                System.out.println("📤 Đã gửi CapNhatTrangThaiResponse về client\n");
-
-            } catch (IOException e) {
-                System.err.println("❌ Lỗi khi gửi response: " + e.getMessage());
-                e.printStackTrace();
-            }
-        }
-
-        /**
-         * Xử lý get all ca làm admin request
-         */
         private void handleGetAllCaLamAdminRequest(GetAllCaLamAdminRequest request) {
             System.out.println("📊 Nhận get all ca làm admin request: " + request);
 
@@ -523,7 +539,7 @@ public class TCPServer {
 
                 GetAllCaLamAdminResponse response = new GetAllCaLamAdminResponse(
                     true, "Lấy danh sách ca làm thành công!", caLamList, totalRecords);
-                
+
                 System.out.println("✅ Tìm thấy " + caLamList.size() + "/" + totalRecords + " ca làm");
 
                 out.writeObject(response);
@@ -536,9 +552,6 @@ public class TCPServer {
             }
         }
 
-        /**
-         * Xử lý create ca làm request
-         */
         private void handleCreateCaLamRequest(CreateCaLamRequest request) {
             System.out.println("📊 Nhận create ca làm request: " + request);
 
@@ -565,9 +578,6 @@ public class TCPServer {
             }
         }
 
-        /**
-         * Xử lý update ca làm request
-         */
         private void handleUpdateCaLamRequest(UpdateCaLamRequest request) {
             System.out.println("📊 Nhận update ca làm request: " + request);
 
@@ -594,9 +604,6 @@ public class TCPServer {
             }
         }
 
-        /**
-         * Xử lý delete ca làm request
-         */
         private void handleDeleteCaLamRequest(DeleteCaLamRequest request) {
             System.out.println("📊 Nhận delete ca làm request: " + request);
 
@@ -621,53 +628,11 @@ public class TCPServer {
                 e.printStackTrace();
             }
         }
-
-        /**
-         * Gửi notification tới client
-         */
-        public void sendNotification(NewRegistrationNotification notification) {
-            try {
-                synchronized (out) {
-                    out.writeObject(notification);
-                    out.flush();
-                    System.out.println("📄 Đã gửi notification tới " + clientId);
-                }
-            } catch (IOException e) {
-                System.err.println("❌ Lỗi khi gửi notification: " + e.getMessage());
-            }
-        }
-        
-        private void closeConnection() {
-            try {
-                // Bỏ admin client ữ danh sách nếu là admin
-                if (server != null) {
-                    server.unregisterAdminClient(this);
-                }
-                
-                if (in != null) in.close();
-                if (out != null) out.close();
-                if (clientSocket != null && !clientSocket.isClosed()) {
-                    clientSocket.close();
-                }
-                
-                // Giảm client count
-                if (server != null) {
-                    server.decrementClientCount();
-                }
-                
-                System.out.println("🔌 Đã đóng kết nối client: " + clientId + "\n");
-                
-            } catch (IOException e) {
-                System.err.println("❌ Lỗi khi đóng kết nối " + clientId + ": " + e.getMessage());
-            }
-        }
     }
 
-    // Main method để chạy server
     public static void main(String[] args) {
         TCPServer server = new TCPServer();
 
-        // Thêm shutdown hook để đóng server khi tắt chương trình
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\n⚠️ Đang tắt server...");
             server.stop();

@@ -255,41 +255,51 @@ public class DangKyDAO {
      * Hủy đăng ký
      */
     public boolean huyDangKy(int maDangky, int maNguoidung) {
-        String checkSql = "SELECT trangthai, ngay_lam FROM dangkycalam WHERE ma_dangky = ? AND ma_nguoidung = ?";
-        
+        String checkSql = "SELECT ngay_lam FROM dangkycalam WHERE ma_dangky = ? AND ma_nguoidung = ?";
+
         try (Connection conn = BDConnection.getConnection();
              PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
-            
+
             checkStmt.setInt(1, maDangky);
             checkStmt.setInt(2, maNguoidung);
             ResultSet rs = checkStmt.executeQuery();
-            
+
             if (rs.next()) {
-                String trangThai = rs.getString("trangthai");
                 LocalDate ngayLam = rs.getDate("ngay_lam").toLocalDate();
-                
-                if ("đã duyệt".equals(trangThai) && ngayLam.isBefore(LocalDate.now())) {
-                    System.out.println("❌ Không thể hủy ca đã duyệt và đã qua!");
+
+                // Ngăn chặn việc hủy nếu ngày làm đã qua
+                if (ngayLam.isBefore(LocalDate.now())) {
+                    System.out.println("❌ Không thể hủy ca đã qua ngày!");
                     return false;
                 }
-                
+
+                // Chỉ cho phép hủy nếu trạng thái là "chờ duyệt"
+                // Giữ lại logic này nếu bạn vẫn muốn giới hạn việc hủy chỉ cho các ca chưa được duyệt
+                /*
+                String trangThai = rs.getString("trangthai");
+                if (!"chờ duyệt".equals(trangThai)) {
+                    System.out.println("❌ Chỉ có thể hủy các ca đang ở trạng thái 'chờ duyệt'!");
+                    return false;
+                }
+                */
+
                 String deleteSql = "DELETE FROM dangkycalam WHERE ma_dangky = ?";
                 try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSql)) {
                     deleteStmt.setInt(1, maDangky);
                     int affected = deleteStmt.executeUpdate();
-                    
+
                     if (affected > 0) {
                         System.out.println("✅ Hủy đăng ký thành công!");
                         return true;
                     }
                 }
             }
-            
+
         } catch (SQLException e) {
             System.err.println("❌ Lỗi khi hủy đăng ký: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         return false;
     }
     
@@ -649,5 +659,55 @@ public class DangKyDAO {
         }
         
         return 0;
+    }
+
+    /**
+     * Lấy thông tin chi tiết của một đăng ký bằng ID
+     */
+    public DangKy getDangKyById(int maDangky) {
+        String sql = "SELECT d.*, c.mo_ta, c.gio_batdau, c.gio_ketthuc, n.ho_ten " +
+                     "FROM dangkycalam d " +
+                     "LEFT JOIN calam c ON d.ma_calam = c.ma_calam " +
+                     "INNER JOIN nguoidung n ON d.ma_nguoidung = n.ma_nguoidung " +
+                     "WHERE d.ma_dangky = ?";
+
+        try (Connection conn = BDConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, maDangky);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                DangKy dangKy = new DangKy();
+                dangKy.setMaDangky(rs.getInt("ma_dangky"));
+                dangKy.setMaNguoidung(rs.getInt("ma_nguoidung"));
+                dangKy.setTenNguoiDung(rs.getString("ho_ten"));
+
+                int maCalam = rs.getInt("ma_calam");
+                if (!rs.wasNull()) {
+                    dangKy.setMaCalam(maCalam);
+                    dangKy.setMoTaCaLam(rs.getString("mo_ta"));
+                    dangKy.setGbdCagay(rs.getTime("gio_batdau"));
+                    dangKy.setGktCagay(rs.getTime("gio_ketthuc"));
+                } else {
+                    dangKy.setMaCalam(null);
+                    dangKy.setMoTaCaLam("Ca gãy");
+                    dangKy.setGbdCagay(rs.getTime("gbd_cagay"));
+                    dangKy.setGktCagay(rs.getTime("gkt_cagay"));
+                }
+
+                dangKy.setThoigianDangky(rs.getTimestamp("thoigian_dangky").toLocalDateTime());
+                dangKy.setNgayLam(rs.getDate("ngay_lam").toLocalDate());
+                dangKy.setTrangthai(DangKy.TrangThai.fromString(rs.getString("trangthai")));
+
+                return dangKy;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("❌ Lỗi khi lấy đăng ký bằng ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }

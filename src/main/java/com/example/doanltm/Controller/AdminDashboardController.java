@@ -27,13 +27,16 @@ import javafx.scene.Node;
 import javafx.event.ActionEvent;
 import javafx.stage.Stage;
 
+import com.example.doanltm.Service.NotificationListener;
+import com.example.doanltm.Request.NewRegistrationNotification;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
-public class AdminDashboardController {
+public class AdminDashboardController implements NotificationListener {
 
     // Header
     @FXML private Label titleLabel; // "Hệ thống quản lí làm việc"
@@ -169,16 +172,9 @@ public class AdminDashboardController {
             alert.showAndWait();
         }
         
-        // Đăng ký callback để nhận notification khi có đơn đăng ký mới
-        tcpClient.setNotificationCallback(notification -> {
-            System.out.println("📑 Admin nhận được notification: " + notification.getMessage());
-            Platform.runLater(() -> {
-                System.out.println("🔄 Đang refresh danh sách đợng ký...");
-                refreshRegistrations();
-                refreshStats();
-            });
-        });
-        System.out.println("📄 Admin callback đã được đăng ký");
+        // Đăng ký listener để nhận thông báo real-time
+        tcpClient.setNotificationListener(this);
+        System.out.println("📄 Admin listener đã được đăng ký");
         
         // Defer access check to allow LoginController to set currentUser
         Platform.runLater(this::verifyAccessOrRedirect);
@@ -1480,5 +1476,28 @@ public class AdminDashboardController {
                 row.getChildren().remove(1);
             }
         }
+    }
+
+    @Override
+    public void onNewRegistration(NewRegistrationNotification notification) {
+        System.out.println("📑 Admin nhận được notification: " + notification.getMessage());
+        Platform.runLater(() -> {
+            showInfo("Có đăng ký mới: " + notification.getMessage());
+            System.out.println("🔄 Đang refresh danh sách đăng ký...");
+            refreshRegistrations();
+            refreshStats();
+        });
+    }
+
+    @Override
+    public void onStatusChange(DangKy updatedDangKy) {
+        // Admin dashboard không cần xử lý notification này trực tiếp trên UI
+        // vì chính admin là người thực hiện thay đổi.
+        // Tuy nhiên, nếu nhiều admin cùng làm việc, có thể refresh tại đây để đồng bộ.
+        Platform.runLater(() -> {
+            System.out.println("🔄 Nhận được thay đổi trạng thái, đang làm mới...");
+            refreshRegistrations();
+            refreshSchedules();
+        });
     }
 }

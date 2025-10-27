@@ -1,7 +1,7 @@
 package com.example.doanltm.Controller;
 
 import com.example.doanltm.Request.LoginRequest;
-import com.example.doanltm.Model.LoginResponse;
+import com.example.doanltm.Response.LoginResponse;
 import com.example.doanltm.Model.User;
 import com.example.doanltm.Service.TCPClientService;
 import javafx.application.Platform;
