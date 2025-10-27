@@ -18,9 +18,6 @@ public class DangKyDAO {
     /**
      * Đăng ký ca làm mới (cả ca bình thường và ca gãy)
      */
-    /**
-     * Đăng ký ca làm mới (cả ca bình thường và ca gãy)
-     */
     public boolean dangKyCaLam(DangKy dangKy) {
         String sql;
         Timestamp currentTime = Timestamp.valueOf(LocalDateTime.now());  // ✅ FIX: Set thời gian hiện tại từ Java
