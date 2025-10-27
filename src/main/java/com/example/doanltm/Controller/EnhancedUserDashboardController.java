@@ -345,9 +345,7 @@ public class EnhancedUserDashboardController implements NotificationListener {
             @Override
             public String toString(CaLam caLam) {
                 if (caLam == null) return "";
-                int available = caLam.getSoLuongToiDa() - caLam.getSoLuongDaDangKy();
-                return String.format("%s (%s) - Còn %d/%d slot", 
-                    caLam.getMoTa(), caLam.getThoiGian(), available, caLam.getSoLuongToiDa());
+                return caLam.getMoTa() + " (" + caLam.getThoiGian() + ")";
             }
             
             @Override
@@ -358,19 +356,8 @@ public class EnhancedUserDashboardController implements NotificationListener {
         
         caLamComboBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null && caLamInfoLabel != null) {
-                int available = newVal.getSoLuongToiDa() - newVal.getSoLuongDaDangKy();
-                String info = String.format("📊 Còn lại: %d/%d slot", available, newVal.getSoLuongToiDa());
-                caLamInfoLabel.setText(info);
-                
-                // Apply CSS classes
+                caLamInfoLabel.setText("");
                 caLamInfoLabel.getStyleClass().removeAll("text-success", "text-warning", "text-danger");
-                if (newVal.isFullSlot()) {
-                    caLamInfoLabel.getStyleClass().add("text-danger");
-                } else if (available <= 2) {
-                    caLamInfoLabel.getStyleClass().add("text-warning");
-                } else {
-                    caLamInfoLabel.getStyleClass().add("text-success");
-                }
             }
         });
         
@@ -637,7 +624,10 @@ public class EnhancedUserDashboardController implements NotificationListener {
                     if (response != null && response.isSuccess() && caLamComboBox != null) {
                         caLamComboBox.getItems().clear();
                         if (response.getCaLamList() != null) {
-                            caLamComboBox.getItems().addAll(response.getCaLamList());
+                            List<CaLam> availableCaLams = response.getCaLamList().stream()
+                                .filter(caLam -> !caLam.isFullSlot())
+                                .collect(Collectors.toList());
+                            caLamComboBox.getItems().addAll(availableCaLams);
                         }
                     }
                 });
